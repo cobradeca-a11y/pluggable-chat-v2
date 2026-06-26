@@ -92,7 +92,7 @@ export default function Home() {
   };
 
   const handleAttach = (att: Attachment | null) => {
-    if (att && !supportedAttachments.includes(att.type)) {
+    if (att && supportedAttachments.length > 0 && !supportedAttachments.includes(att.type)) {
       showToast('Este provider não suporta este tipo de arquivo.', 'error');
       return;
     }

@@ -97,7 +97,7 @@ pluggable-chat/
 
     │   ├── components/
 
-    │   │   ├── Sidebar.tsx          ← lista de conversas (a implementar — ver SPEC)
+    │   │   ├── Sidebar.tsx          ← lista de conversas com busca, rename, export, delete
 
     │   │   ├── ChatInput.tsx
 
@@ -111,15 +111,19 @@ pluggable-chat/
 
     │   ├── hooks/
 
-    │   │   ├── useChat.ts           ← estado + streaming + chamada à API
+    │   │   ├── useChat.ts           ← estado + streaming + chamada à API + memória (MEMORY_WINDOW=20)
 
-    │   │   ├── useConversations.ts  ← gerencia histórico no localStorage (a implementar)
+    │   │   ├── useConversations.ts  ← gerencia histórico no localStorage
+
+    │   │   ├── useActiveModel.ts    ← provider/model ativo + supported_attachments
 
     │   │   └── useTheme.ts          ← tema claro/escuro
 
     │   └── lib/
 
-    │       └── types.ts             ← tipos TypeScript (Conversation a adicionar)
+    │       ├── types.ts             ← tipos TypeScript (Message, Attachment, Conversation...)
+
+    │       └── export.ts            ← exportAsMarkdown, exportAsJson
 
     └── ...config files
 ```
@@ -188,16 +192,20 @@ curl -X POST http://localhost:8000/api/chat \
 Exemplo mínimo:
 
 ```python
-from core.protocol import LLMProvider, Message
+from core.protocol import LLMProvider, Message, Attachment
 from core.registry import register_provider
-from typing import AsyncIterator
+from typing import AsyncIterator, List, Optional
 
 @register_provider("meu-provedor")
 class MeuProvedor(LLMProvider):
-    async def complete(self, messages: list[Message]) -> str:
+    @property
+    def supported_attachments(self) -> List[str]:
+        return []  # ex: ["image/png", "image/jpeg"]
+
+    async def complete(self, messages: List[Message], attachment: Optional[Attachment] = None) -> str:
         return "resposta aqui"
 
-    async def stream(self, messages: list[Message]) -> AsyncIterator[str]:
+    async def stream(self, messages: List[Message], attachment: Optional[Attachment] = None) -> AsyncIterator[str]:
         yield "resposta "
         yield "aqui"
 
@@ -308,6 +316,11 @@ cd frontend && npx tsc --noEmit
 | 2026-06 | Frontend na Vercel, backend no Railway | Vercel é nativo Next.js; Railway suporta Python sem configuração extra |
 | 2026-06 | CORS configurado via variável de ambiente `ALLOWED_ORIGIN` | Permite trocar domínio de produção sem alterar código |
 | 2026-06 | Histórico de conversas em localStorage (máx 50, expiração 90 dias) | Sem backend extra, sem auth, funciona offline; limitação aceitável para uso pessoal |
+| 2026-06 | `supported_attachments` como property no Protocol | Permite frontend detectar capacidades do provider sem lógica hardcoded |
+| 2026-06 | Upload limitado a imagens (PNG, JPEG, WEBP) via base64 | OpenRouter suporta content blocks de imagem; PDF bloqueado com Toast até provider suportar |
+| 2026-06 | MEMORY_WINDOW=20 mensagens no payload ao backend | Evita estourar contexto; histórico completo salvo no localStorage |
+| 2026-06 | Exportação de conversa client-side via Blob + createObjectURL | Sem backend, sem dependência externa |
+| 2026-06 | Título da conversa gerado da primeira mensagem do usuário (máx 40 chars) | Sem input manual; rename manual disponível via duplo clique na sidebar |
 
 ---
 
@@ -400,6 +413,3 @@ sem instrução explícita do dono do projeto**. Registradas aqui para não se p
 - **Testes primeiro**: se a tarefa é adicionar funcionalidade, crie o teste antes.
 
 - **Antes de implementar qualquer feature do backlog**, confirme com o dono do projeto.
-
-- **Ao implementar a sidebar**, siga o `SPEC_sidebar_conversas.md` à risca.
-  Não adicionar features além do especificado na sprint.
