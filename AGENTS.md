@@ -340,7 +340,7 @@ cd frontend && npx tsc --noEmit
 | Toast de notificações | ✅ Implementado | — |
 | Sidebar de conversas com histórico | ✅ Implementado | `SPEC_sidebar_conversas.md` |
 | Auto-scroll inteligente | ✅ Implementado | — |
-| Indicador de modelo ativo no rodapé | 🔲 A implementar | — |
+| Indicador de modelo ativo no rodapé | ✅ Implementado | — |
 | Busca no histórico de conversas | 📋 Backlog | — |
 | Renomear conversa manualmente | 📋 Backlog | — |
 | Exportar conversa (JSON/MD) | 📋 Backlog | — |
