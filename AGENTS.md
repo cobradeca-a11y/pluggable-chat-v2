@@ -157,7 +157,7 @@ npm run dev                      # http://localhost:3000
 ```bash
 # Backend health check:
 
-curl http://localhost:8000/api/chat/health
+curl http://localhost:8000/api/health
 
 # Listar plugins carregados:
 
