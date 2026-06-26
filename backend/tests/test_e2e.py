@@ -1,7 +1,6 @@
 import os
 import sys
 from pathlib import Path
-import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -11,7 +10,6 @@ os.environ["ACTIVE_MIDDLEWARE"] = "rate_limit,request_logger"
 
 from fastapi.testclient import TestClient
 from main import app
-from app.config import settings
 
 client = TestClient(app)
 

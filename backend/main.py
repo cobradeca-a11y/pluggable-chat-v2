@@ -30,6 +30,18 @@ async def health_check() -> dict[str, str]:
     return {"status": "ok"}
 
 @app.get("/api/plugins")
-async def list_plugins() -> dict[str, list[str]]:
+async def list_plugins() -> dict:
     providers = get_all_providers()
-    return {"providers": list(providers.keys())}
+    capabilities = {}
+    for name, provider_class in providers.items():
+        try:
+            instance = provider_class()
+            supported = getattr(instance, 'supported_attachments', [])
+            capabilities[name] = {"supported_attachments": supported}
+        except Exception:
+            capabilities[name] = {"supported_attachments": []}
+    return {
+        "providers": list(providers.keys()),
+        "active_provider": settings.LLM_PROVIDER,
+        "capabilities": capabilities
+    }

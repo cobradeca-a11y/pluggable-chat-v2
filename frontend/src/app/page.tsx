@@ -10,6 +10,7 @@ import { SettingsModal } from '../components/SettingsModal';
 import { Sidebar } from '../components/Sidebar';
 import { useTheme } from '../hooks/useTheme';
 import { useActiveModel } from '../hooks/useActiveModel';
+import { Attachment } from '../lib/types';
 
 export default function Home() {
   const { theme, toggleTheme } = useTheme();
@@ -19,12 +20,14 @@ export default function Home() {
 
   const {
     messages, input, setInput, loading, sendMessage,
-    toast, clearToast, retryLastMessage, clearChat,
+    toast, clearToast, showToast, retryLastMessage, clearChat,
     providerSettings, saveProviderSettings, stopGeneration,
     conversations
   } = useChat();
 
-  const { provider, model } = useActiveModel(providerSettings);
+  const { provider, model, supportedAttachments } = useActiveModel(providerSettings);
+
+  const [pendingAttachment, setPendingAttachment] = useState<Attachment | null>(null);
 
   const mainRef = useRef<HTMLDivElement>(null);
   const endOfMessagesRef = useRef<HTMLDivElement>(null);
@@ -37,6 +40,36 @@ export default function Home() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Atalhos de teclado globais
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
+
+      // Escape sempre funciona
+      if (e.key === 'Escape') {
+        if (isSettingsOpen) setIsSettingsOpen(false);
+        else if (isSidebarOpen && !isDesktop) setIsSidebarOpen(false);
+        return;
+      }
+
+      // Ctrl+K e Ctrl+B não disparam dentro de inputs
+      if (isInput) return;
+
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        clearChat();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+        e.preventDefault();
+        setIsSidebarOpen(prev => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isSettingsOpen, isSidebarOpen, isDesktop, clearChat]);
 
   const handleScroll = () => {
     if (mainRef.current) {
@@ -54,7 +87,16 @@ export default function Home() {
 
   const handleSendMessage = (txt: string) => {
     setIsAutoScroll(true);
-    sendMessage(txt, true);
+    sendMessage(txt, true, pendingAttachment || undefined);
+    setPendingAttachment(null);
+  };
+
+  const handleAttach = (att: Attachment | null) => {
+    if (att && !supportedAttachments.includes(att.type)) {
+      showToast('Este provider não suporta este tipo de arquivo.', 'error');
+      return;
+    }
+    setPendingAttachment(att);
   };
 
   return (
@@ -77,6 +119,7 @@ export default function Home() {
         onSelect={conversations.loadConversation}
         onNew={clearChat}
         onDelete={conversations.deleteConversation}
+        onRename={conversations.renameConversation}
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
       />
@@ -217,6 +260,9 @@ export default function Home() {
               loading={loading}
               sendMessage={handleSendMessage}
               stopGeneration={stopGeneration}
+              attachment={pendingAttachment}
+              onAttach={handleAttach}
+              onAttachError={(msg) => showToast(msg, 'error')}
             />
             <div style={{ textAlign: 'center', marginTop: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
               <span style={{ fontSize: 10, color: '#52525b', textTransform: 'uppercase', letterSpacing: 1 }}>

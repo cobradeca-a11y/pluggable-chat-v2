@@ -137,6 +137,13 @@ export function useConversations() {
     }
   }, [activeId]);
 
+  const renameConversation = useCallback((id: string, newTitle: string) => {
+    if (!newTitle.trim()) return;
+    setConversations(prev =>
+      prev.map(c => c.id === id ? { ...c, title: newTitle.trim(), updatedAt: Date.now() } : c)
+    );
+  }, []);
+
   return {
     conversations,
     activeId,
@@ -145,6 +152,7 @@ export function useConversations() {
     loadConversation,
     saveConversation,
     deleteConversation,
+    renameConversation,
     generateTitle
   };
 }

@@ -32,7 +32,7 @@ def _get_active_provider(req: ChatRequest) -> LLMProvider:
 @router.post("/api/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest) -> ChatResponse:
     provider = _get_active_provider(request)
-    content = await provider.complete(request.messages)
+    content = await provider.complete(request.messages, attachment=request.attachment)
     return ChatResponse(content=content)
 
 @router.post("/api/chat/stream")
@@ -40,7 +40,7 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
     provider = _get_active_provider(request)
     
     async def sse_generator() -> AsyncGenerator[str, None]:
-        async for chunk in provider.stream(request.messages):
+        async for chunk in provider.stream(request.messages, attachment=request.attachment):
             yield f"data: {chunk}\n\n"
         yield "data: [DONE]\n\n"
         

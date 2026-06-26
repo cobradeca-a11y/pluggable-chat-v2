@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Conversation } from '../lib/types';
 import { useTheme } from '../hooks/useTheme';
+import { exportAsMarkdown, exportAsJson } from '../lib/export';
 
 interface SidebarProps {
   conversations: Conversation[];
@@ -8,15 +9,20 @@ interface SidebarProps {
   onSelect: (id: string) => void;
   onNew: () => void;
   onDelete: (id: string) => void;
+  onRename: (id: string, title: string) => void;
   isOpen: boolean;
   onClose: () => void;
 }
 
-export function Sidebar({ conversations, activeId, onSelect, onNew, onDelete, isOpen, onClose }: SidebarProps) {
+export function Sidebar({ conversations, activeId, onSelect, onNew, onDelete, onRename, isOpen, onClose }: SidebarProps) {
   const { theme } = useTheme();
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const menuRef = useRef<HTMLDivElement>(null);
+  const editInputRef = useRef<HTMLInputElement>(null);
 
   // Fecha o menu ao clicar fora
   useEffect(() => {
@@ -29,7 +35,37 @@ export function Sidebar({ conversations, activeId, onSelect, onNew, onDelete, is
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Foca o input de edição ao entrar no modo rename
+  useEffect(() => {
+    if (editingId && editInputRef.current) {
+      editInputRef.current.focus();
+      editInputRef.current.select();
+    }
+  }, [editingId]);
+
   const isDark = theme === 'dark';
+
+  const handleRenameSubmit = () => {
+    if (editingId && editTitle.trim()) {
+      onRename(editingId, editTitle);
+    }
+    setEditingId(null);
+    setEditTitle('');
+  };
+
+  const handleRenameKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleRenameSubmit();
+    } else if (e.key === 'Escape') {
+      setEditingId(null);
+      setEditTitle('');
+    }
+  };
+
+  // Filtrar conversas pela busca
+  const filteredConversations = searchQuery.trim()
+    ? conversations.filter(c => c.title.toLowerCase().includes(searchQuery.toLowerCase()))
+    : conversations;
 
   return (
     <>
@@ -75,15 +111,33 @@ export function Sidebar({ conversations, activeId, onSelect, onNew, onDelete, is
           </button>
         </div>
 
+        {/* Busca */}
+        <div style={{ padding: '0 16px 12px' }}>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Buscar conversas..."
+            style={{
+              width: '100%', padding: '8px 12px', borderRadius: 8,
+              border: isDark ? '1px solid #27272a' : '1px solid #e4e4e7',
+              backgroundColor: isDark ? '#18181b' : '#ffffff',
+              color: isDark ? '#f4f4f5' : '#18181b',
+              fontSize: 13, outline: 'none',
+              boxSizing: 'border-box'
+            }}
+          />
+        </div>
+
         {/* Lista */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '0 12px 16px' }}>
-          {conversations.length === 0 ? (
+          {filteredConversations.length === 0 ? (
             <div style={{ textAlign: 'center', marginTop: 40, color: '#71717a', fontSize: 13 }}>
-              Nenhuma conversa ainda.
+              {searchQuery.trim() ? 'Nenhuma conversa encontrada.' : 'Nenhuma conversa ainda.'}
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {conversations.map(conv => (
+              {filteredConversations.map(conv => (
                 <div
                   key={conv.id}
                   style={{
@@ -98,30 +152,57 @@ export function Sidebar({ conversations, activeId, onSelect, onNew, onDelete, is
                       : '#71717a'
                   }}
                   onClick={() => {
-                    onSelect(conv.id);
-                    if (window.innerWidth < 768) onClose();
+                    if (editingId !== conv.id) {
+                      onSelect(conv.id);
+                      if (window.innerWidth < 768) onClose();
+                    }
+                  }}
+                  onDoubleClick={() => {
+                    setEditingId(conv.id);
+                    setEditTitle(conv.title);
                   }}
                 >
                   <div style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 14 }}>
-                    {conv.title}
+                    {editingId === conv.id ? (
+                      <input
+                        ref={editInputRef}
+                        value={editTitle}
+                        onChange={(e) => setEditTitle(e.target.value)}
+                        onBlur={handleRenameSubmit}
+                        onKeyDown={handleRenameKeyDown}
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                          width: '100%', padding: '2px 4px', borderRadius: 4,
+                          border: isDark ? '1px solid #3f3f46' : '1px solid #d4d4d8',
+                          backgroundColor: isDark ? '#18181b' : '#ffffff',
+                          color: isDark ? '#f4f4f5' : '#18181b',
+                          fontSize: 14, outline: 'none',
+                          boxSizing: 'border-box'
+                        }}
+                      />
+                    ) : (
+                      conv.title
+                    )}
                   </div>
 
                   {/* Botão "..." */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setMenuOpenId(menuOpenId === conv.id ? null : conv.id);
-                    }}
-                    style={{
-                      background: 'transparent', border: 'none',
-                      color: '#71717a', cursor: 'pointer',
-                      padding: '2px 6px', fontSize: 16, lineHeight: 1,
-                      borderRadius: 4,
-                    }}
-                    title="Opções"
-                  >
-                    ···
-                  </button>
+                  {editingId !== conv.id && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMenuOpenId(menuOpenId === conv.id ? null : conv.id);
+                      }}
+                      style={{
+                        background: 'transparent', border: 'none',
+                        color: '#71717a', cursor: 'pointer',
+                        padding: '2px 6px', fontSize: 16, lineHeight: 1,
+                        borderRadius: 4,
+                      }}
+                      title="Opções"
+                    >
+                      ···
+                    </button>
+                  )}
 
                   {/* Dropdown */}
                   {menuOpenId === conv.id && (
@@ -133,10 +214,60 @@ export function Sidebar({ conversations, activeId, onSelect, onNew, onDelete, is
                         backgroundColor: isDark ? '#18181b' : '#ffffff',
                         border: isDark ? '1px solid #27272a' : '1px solid #e4e4e7',
                         borderRadius: 8, padding: '4px 0',
-                        zIndex: 100, minWidth: 120,
+                        zIndex: 100, minWidth: 160,
                         boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
                       }}
                     >
+                      <button
+                        onClick={() => {
+                          setMenuOpenId(null);
+                          setEditingId(conv.id);
+                          setEditTitle(conv.title);
+                        }}
+                        style={{
+                          display: 'block', width: '100%',
+                          padding: '8px 16px', background: 'transparent',
+                          border: 'none', textAlign: 'left',
+                          cursor: 'pointer', fontSize: 14,
+                          color: isDark ? '#d4d4d8' : '#3f3f46',
+                        }}
+                      >
+                        Renomear
+                      </button>
+                      <button
+                        onClick={() => {
+                          exportAsMarkdown(conv);
+                          setMenuOpenId(null);
+                        }}
+                        style={{
+                          display: 'block', width: '100%',
+                          padding: '8px 16px', background: 'transparent',
+                          border: 'none', textAlign: 'left',
+                          cursor: 'pointer', fontSize: 14,
+                          color: isDark ? '#d4d4d8' : '#3f3f46',
+                        }}
+                      >
+                        Exportar .md
+                      </button>
+                      <button
+                        onClick={() => {
+                          exportAsJson(conv);
+                          setMenuOpenId(null);
+                        }}
+                        style={{
+                          display: 'block', width: '100%',
+                          padding: '8px 16px', background: 'transparent',
+                          border: 'none', textAlign: 'left',
+                          cursor: 'pointer', fontSize: 14,
+                          color: isDark ? '#d4d4d8' : '#3f3f46',
+                        }}
+                      >
+                        Exportar .json
+                      </button>
+                      <hr style={{
+                        margin: '4px 0', border: 'none',
+                        borderTop: isDark ? '1px solid #27272a' : '1px solid #e4e4e7'
+                      }} />
                       <button
                         onClick={() => {
                           setMenuOpenId(null);

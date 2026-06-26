@@ -1,8 +1,8 @@
 import json
 import httpx
-from typing import AsyncIterator, List
+from typing import AsyncIterator, List, Optional
 
-from core.protocol import LLMProvider, Message
+from core.protocol import LLMProvider, Message, Attachment
 from core.registry import register_provider
 from app.config import settings
 
@@ -13,7 +13,11 @@ class OllamaProvider(LLMProvider):
         self.base_url = settings.OLLAMA_BASE_URL
         self.model = settings.OLLAMA_MODEL
 
-    async def complete(self, messages: List[Message]) -> str:
+    @property
+    def supported_attachments(self) -> list[str]:
+        return []
+
+    async def complete(self, messages: List[Message], attachment: Optional[Attachment] = None) -> str:
         payload = {
             "model": self.model,
             "messages": [m.model_dump() for m in messages],
@@ -29,7 +33,7 @@ class OllamaProvider(LLMProvider):
             data = response.json()
             return data["message"]["content"]
 
-    async def stream(self, messages: List[Message]) -> AsyncIterator[str]:
+    async def stream(self, messages: List[Message], attachment: Optional[Attachment] = None) -> AsyncIterator[str]:
         payload = {
             "model": self.model,
             "messages": [m.model_dump() for m in messages],

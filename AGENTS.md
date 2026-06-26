@@ -341,10 +341,12 @@ cd frontend && npx tsc --noEmit
 | Sidebar de conversas com histórico | ✅ Implementado | `SPEC_sidebar_conversas.md` |
 | Auto-scroll inteligente | ✅ Implementado | — |
 | Indicador de modelo ativo no rodapé | ✅ Implementado | — |
-| Busca no histórico de conversas | 📋 Backlog | — |
-| Renomear conversa manualmente | 📋 Backlog | — |
-| Exportar conversa (JSON/MD) | 📋 Backlog | — |
-| Atalhos de teclado (Ctrl+K nova conversa) | 📋 Backlog | — |
+| Busca no histórico de conversas | ✅ Implementado | `SPEC_sprint_S1.md` |
+| Renomear conversa manualmente | ✅ Implementado | `SPEC_sprint_S1.md` |
+| Exportar conversa (JSON/MD) | ✅ Implementado | `SPEC_sprint_S1.md` |
+| Atalhos de teclado | ✅ Implementado | `SPEC_sprint_S1.md` |
+| Memória de conversa (contexto) | ✅ Implementado | `SPEC_sprint_S1.md` |
+| Upload de arquivos (imagens) | ✅ Implementado | `SPEC_sprint_S1.md` |
 
 ---
 
@@ -354,12 +356,9 @@ Estas features foram identificadas como desejáveis mas **não devem ser impleme
 sem instrução explícita do dono do projeto**. Registradas aqui para não se perderem.
 
 ### Frontend
-- **Busca no histórico** — filtrar conversas por texto, busca no conteúdo das mensagens
-- **Renomear conversa** — editar o título gerado automaticamente (duplo clique no item da sidebar)
-- **Exportar conversa** — baixar como `.md` ou `.json`
-- **Atalhos de teclado** — `Ctrl+K` nova conversa, `Ctrl+/` busca
+- **Busca no histórico** — implementado parcialmente (busca no conteúdo está no backlog)
 - **Pré-visualização de código** — syntax highlight nos blocos de código das respostas
-- **Upload de arquivos** — enviar imagem ou PDF junto à mensagem (requer suporte no provider)
+- **Upload de PDF** — enviar PDF junto à mensagem (suporte do provider pendente, por ora apenas imagens)
 - **Modo compacto** — densidade maior de mensagens para telas menores
 - **Internacionalização** — suporte a múltiplos idiomas na UI
 

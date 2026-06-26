@@ -1,15 +1,19 @@
 import asyncio
-from typing import AsyncIterator, List
+from typing import AsyncIterator, List, Optional
 
-from core.protocol import LLMProvider, Message
+from core.protocol import LLMProvider, Message, Attachment
 from core.registry import register_provider
 
 @register_provider("mock")
 class MockProvider(LLMProvider):
-    async def complete(self, messages: List[Message]) -> str:
+    @property
+    def supported_attachments(self) -> list[str]:
+        return []
+
+    async def complete(self, messages: List[Message], attachment: Optional[Attachment] = None) -> str:
         return "I am a mock response."
 
-    async def stream(self, messages: List[Message]) -> AsyncIterator[str]:
+    async def stream(self, messages: List[Message], attachment: Optional[Attachment] = None) -> AsyncIterator[str]:
         words = ["I", " am", " a", " mock", " response."]
         for word in words:
             yield word

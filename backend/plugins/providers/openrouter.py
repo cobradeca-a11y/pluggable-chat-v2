@@ -1,8 +1,8 @@
 import json
 import httpx
-from typing import AsyncIterator, List
+from typing import AsyncIterator, List, Optional
 
-from core.protocol import LLMProvider, Message
+from core.protocol import LLMProvider, Message, Attachment
 from core.registry import register_provider
 from app.config import settings
 
@@ -19,10 +19,32 @@ class OpenRouterProvider(LLMProvider):
             "Content-Type": "application/json"
         }
 
-    async def complete(self, messages: List[Message]) -> str:
+    @property
+    def supported_attachments(self) -> list[str]:
+        return ["image/png", "image/jpeg", "image/webp"]
+
+    def _build_messages(self, messages: List[Message], attachment: Optional[Attachment] = None) -> list:
+        """Monta a lista de mensagens para o payload, incluindo content blocks multimodais se houver attachment."""
+        payload_messages = [m.model_dump() for m in messages]
+
+        if attachment and attachment.type.startswith("image/") and payload_messages:
+            # Substitui a última mensagem do usuário por content blocks multimodais
+            last_msg = payload_messages[-1]
+            if last_msg.get("role") == "user":
+                payload_messages[-1] = {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": last_msg["content"]},
+                        {"type": "image_url", "image_url": {"url": f"data:{attachment.type};base64,{attachment.data}"}}
+                    ]
+                }
+
+        return payload_messages
+
+    async def complete(self, messages: List[Message], attachment: Optional[Attachment] = None) -> str:
         payload = {
             "model": self.model,
-            "messages": [m.model_dump() for m in messages],
+            "messages": self._build_messages(messages, attachment),
             "stream": False
         }
         async with httpx.AsyncClient() as client:
@@ -36,10 +58,10 @@ class OpenRouterProvider(LLMProvider):
             data = response.json()
             return data["choices"][0]["message"]["content"]
 
-    async def stream(self, messages: List[Message]) -> AsyncIterator[str]:
+    async def stream(self, messages: List[Message], attachment: Optional[Attachment] = None) -> AsyncIterator[str]:
         payload = {
             "model": self.model,
-            "messages": [m.model_dump() for m in messages],
+            "messages": self._build_messages(messages, attachment),
             "stream": True
         }
         async with httpx.AsyncClient() as client:

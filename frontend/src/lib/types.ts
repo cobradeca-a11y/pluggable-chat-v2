@@ -1,7 +1,14 @@
+export interface Attachment {
+  name: string;
+  type: string;  // MIME type
+  data: string;  // base64
+}
+
 export interface Message {
   role: "user" | "assistant" | "system";
   content: string;
   isError?: boolean;
+  attachment?: Attachment;
 }
 
 export interface ChatRequest {
@@ -9,6 +16,7 @@ export interface ChatRequest {
   provider?: string;
   model?: string;
   api_key?: string;
+  attachment?: Attachment;
 }
 
 export interface ChatResponse {

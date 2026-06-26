@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from "react";
-import { Message, ProviderSettings, ChatRequest } from "../lib/types";
+import { Message, ProviderSettings, ChatRequest, Attachment } from "../lib/types";
 import { useConversations } from "./useConversations";
 
 export function useChat() {
@@ -65,13 +65,20 @@ export function useChat() {
   }, [showToast]);
 
   const sendMessage = useCallback(
-    async (text: string, stream = true) => {
+    async (text: string, stream = true, attachment?: Attachment) => {
       if (!text.trim()) return;
 
+      const MEMORY_WINDOW = 20;
+
       const newUserMessage: Message = { role: "user", content: text };
-      const currentMessages = [...messages, newUserMessage];
+      if (attachment) {
+        newUserMessage.attachment = attachment;
+      }
+      const allMessages = [...messages, newUserMessage];
+      // Limita ao window de memória para o payload enviado ao backend
+      const contextMessages = allMessages.slice(-MEMORY_WINDOW);
       
-      setMessages(currentMessages);
+      setMessages(allMessages);
       setInput("");
       setLoading(true);
 
@@ -84,9 +91,12 @@ export function useChat() {
       try {
         // Para ambos os casos (stream ou não), adicionamos o placeholder do assistant
         // assim se der erro, temos uma mensagem para marcar como isError
-        setMessages([...currentMessages, { role: "assistant", content: "" }]);
+        setMessages([...allMessages, { role: "assistant", content: "" }]);
 
-        const payload: ChatRequest = { messages: currentMessages };
+        const payload: ChatRequest = { messages: contextMessages };
+        if (attachment) {
+          payload.attachment = attachment;
+        }
         if (providerSettings.provider) {
           payload.provider = providerSettings.provider;
         }
