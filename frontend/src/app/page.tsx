@@ -9,6 +9,7 @@ import { Toast } from '../components/Toast';
 import { SettingsModal } from '../components/SettingsModal';
 import { Sidebar } from '../components/Sidebar';
 import { useTheme } from '../hooks/useTheme';
+import { useActiveModel } from '../hooks/useActiveModel';
 
 export default function Home() {
   const { theme, toggleTheme } = useTheme();
@@ -22,6 +23,8 @@ export default function Home() {
     providerSettings, saveProviderSettings, stopGeneration,
     conversations
   } = useChat();
+
+  const { provider, model } = useActiveModel(providerSettings);
 
   const mainRef = useRef<HTMLDivElement>(null);
   const endOfMessagesRef = useRef<HTMLDivElement>(null);
@@ -139,14 +142,7 @@ export default function Home() {
               </button>
             )}
 
-            <div style={{
-              padding: '4px 8px', borderRadius: 6,
-              backgroundColor: theme === 'dark' ? '#27272a' : '#f4f4f5',
-              color: '#71717a', fontSize: 11,
-              display: isDesktop ? 'block' : 'none'
-            }}>
-              {providerSettings.provider || 'Padrão'}
-            </div>
+
 
             <button
               onClick={() => setIsSettingsOpen(true)}
@@ -222,9 +218,12 @@ export default function Home() {
               sendMessage={handleSendMessage}
               stopGeneration={stopGeneration}
             />
-            <div style={{ textAlign: 'center', marginTop: 8 }}>
+            <div style={{ textAlign: 'center', marginTop: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
               <span style={{ fontSize: 10, color: '#52525b', textTransform: 'uppercase', letterSpacing: 1 }}>
                 AI Pluggable Architecture
+              </span>
+              <span style={{ fontSize: 11, color: '#71717a' }}>
+                {provider} · {model}
               </span>
             </div>
           </div>
