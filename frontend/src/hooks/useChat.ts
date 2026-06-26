@@ -1,58 +1,57 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Message, ProviderSettings, ChatRequest } from "../lib/types";
+import { useConversations } from "./useConversations";
 
 export function useChat() {
+  const conv = useConversations();
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
   const [toast, setToast] = useState<{message: string, type: 'success' | 'error'} | null>(null);
-  const [isInitialized, setIsInitialized] = useState(false);
   const [providerSettings, setProviderSettings] = useState<ProviderSettings>({
     provider: "",
     model: "",
     apiKey: ""
   });
 
-  const CHAT_STORAGE_KEY = "pluggable_chat_history";
-  const TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 dias
+  const isSwitchingRef = useRef(false);
 
-  // Carregar do localStorage
+  // Load conversation messages when activeId changes
+  useEffect(() => {
+    if (conv.activeId) {
+      isSwitchingRef.current = true;
+      setMessages(conv.activeConversation?.messages || []);
+      // Reset after render
+      setTimeout(() => { isSwitchingRef.current = false; }, 0);
+    } else {
+      setMessages([]);
+    }
+  }, [conv.activeId]); // Depend on activeId intentionally, avoid activeConversation loops
+
+  // Save conversation messages when they change
+  useEffect(() => {
+    if (!isSwitchingRef.current && messages.length > 0) {
+      let currentId = conv.activeId;
+      if (!currentId) {
+        currentId = conv.createConversation();
+      }
+      conv.saveConversation(currentId, messages, providerSettings);
+    }
+  }, [messages, providerSettings]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Carregar configurações
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(CHAT_STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Date.now() - parsed.timestamp > TTL_MS) {
-          localStorage.removeItem(CHAT_STORAGE_KEY);
-        } else if (Array.isArray(parsed.messages)) {
-          setMessages(parsed.messages);
-        }
-      }
-      
       const storedSettings = localStorage.getItem("pluggable_chat_settings");
       if (storedSettings) {
         setProviderSettings(JSON.parse(storedSettings));
       }
     } catch (e) {
-      console.error("Failed to parse chat history", e);
-    } finally {
-      setIsInitialized(true);
+      console.error("Failed to parse settings", e);
     }
   }, []);
-
-  // Salvar no localStorage
-  useEffect(() => {
-    if (!isInitialized) return;
-    if (messages.length > 0) {
-      localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify({
-        timestamp: Date.now(),
-        messages
-      }));
-    } else {
-      localStorage.removeItem(CHAT_STORAGE_KEY);
-    }
-  }, [messages, isInitialized]);
 
   const clearToast = useCallback(() => setToast(null), []);
   const showToast = useCallback((message: string, type: 'success' | 'error') => {
@@ -206,9 +205,9 @@ export function useChat() {
   }, [messages, loading, sendMessage]);
 
   const clearChat = useCallback(() => {
+    conv.createConversation();
     setMessages([]);
-    localStorage.removeItem("pluggable_chat_history");
-  }, []);
+  }, [conv]);
 
   const stopGeneration = useCallback(() => {
     abortControllerRef.current?.abort();
@@ -217,6 +216,7 @@ export function useChat() {
   return { 
     messages, input, setInput, loading, toast, 
     clearToast, showToast, sendMessage, retryLastMessage, clearChat,
-    providerSettings, saveProviderSettings, stopGeneration
+    providerSettings, saveProviderSettings, stopGeneration,
+    conversations: conv
   };
 }

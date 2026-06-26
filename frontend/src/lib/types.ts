@@ -20,3 +20,18 @@ export interface ProviderSettings {
   model: string;
   apiKey: string;
 }
+
+export interface Conversation {
+  id: string;
+  title: string;
+  createdAt: number;
+  updatedAt: number;
+  messages: Message[];
+  provider: string;
+  model: string;
+}
+
+export interface ConversationsStore {
+  conversations: Conversation[];
+  activeId: string | null;
+}
