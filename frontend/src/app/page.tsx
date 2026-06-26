@@ -101,7 +101,7 @@ export default function Home() {
 
   return (
     <div style={{ display: 'flex', height: '100vh', width: '100%', overflow: 'hidden', backgroundColor: theme === 'dark' ? '#09090b' : '#fafafa' }}>
-      
+
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
@@ -113,7 +113,7 @@ export default function Home() {
         <Toast message={toast.message} type={toast.type} onClose={clearToast} />
       )}
 
-      <Sidebar 
+      <Sidebar
         conversations={conversations.conversations}
         activeId={conversations.activeId}
         onSelect={conversations.loadConversation}
@@ -125,12 +125,12 @@ export default function Home() {
       />
 
       {/* Main Content Area */}
-      <div style={{ 
-        flex: 1, 
-        display: 'flex', 
-        flexDirection: 'column', 
+      <div style={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
         height: '100%',
-        marginLeft: (isSidebarOpen && isDesktop) ? 260 : 0, 
+        marginLeft: (isSidebarOpen && isDesktop) ? 260 : 0,
         transition: 'margin-left 0.2s ease-in-out',
         width: '100%'
       }}>
@@ -147,7 +147,7 @@ export default function Home() {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {!isSidebarOpen && (
-              <button 
+              <button
                 onClick={() => setIsSidebarOpen(true)}
                 style={{
                   background: 'transparent', border: 'none', color: theme === 'dark' ? '#f4f4f5' : '#18181b',
@@ -245,8 +245,8 @@ export default function Home() {
 
         {/* Input */}
         <div style={{
-          position: 'fixed', bottom: 0, 
-          left: (isSidebarOpen && isDesktop) ? 260 : 0, 
+          position: 'fixed', bottom: 0,
+          left: (isSidebarOpen && isDesktop) ? 260 : 0,
           width: (isSidebarOpen && isDesktop) ? 'calc(100% - 260px)' : '100%',
           transition: 'left 0.2s ease-in-out, width 0.2s ease-in-out',
           padding: '16px 20px 20px',
