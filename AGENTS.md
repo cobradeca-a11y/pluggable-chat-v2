@@ -338,7 +338,8 @@ cd frontend && npx tsc --noEmit
 | Tema claro/escuro | ✅ Implementado | — |
 | Modal de configurações (provider/model/apiKey) | ✅ Implementado | — |
 | Toast de notificações | ✅ Implementado | — |
-| Sidebar de conversas com histórico | 🔲 A implementar | `SPEC_sidebar_conversas.md` |
+| Sidebar de conversas com histórico | ✅ Implementado | `SPEC_sidebar_conversas.md` |
+| Auto-scroll inteligente | ✅ Implementado | — |
 | Indicador de modelo ativo no rodapé | 🔲 A implementar | — |
 | Busca no histórico de conversas | 📋 Backlog | — |
 | Renomear conversa manualmente | 📋 Backlog | — |
