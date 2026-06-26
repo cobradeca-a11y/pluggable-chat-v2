@@ -79,7 +79,7 @@ export function useChat() {
       const controller = new AbortController();
       abortControllerRef.current = controller;
 
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || "https://pluggable-chat-v2-production.up.railway.app";
       const endpoint = stream ? "/api/chat/stream" : "/api/chat";
 
       try {
