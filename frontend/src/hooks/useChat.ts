@@ -32,14 +32,10 @@ export function useChat() {
 
   // Save conversation messages when they change
   useEffect(() => {
-    if (!isSwitchingRef.current && messages.length > 0) {
-      let currentId = conv.activeId;
-      if (!currentId) {
-        currentId = conv.createConversation();
-      }
-      conv.saveConversation(currentId, messages, providerSettings);
+    if (!isSwitchingRef.current && messages.length > 0 && conv.activeId) {
+      conv.saveConversation(conv.activeId, messages, providerSettings);
     }
-  }, [messages, providerSettings]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [messages, providerSettings, conv]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Carregar configurações
   useEffect(() => {
@@ -67,6 +63,10 @@ export function useChat() {
   const sendMessage = useCallback(
     async (text: string, stream = true, attachment?: Attachment) => {
       if (!text.trim()) return;
+
+      if (!conv.activeId) {
+        conv.createConversation();
+      }
 
       const MEMORY_WINDOW = 20;
 

@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { Attachment } from '../lib/types';
+import { useTheme } from '../hooks/useTheme';
 
 interface ChatInputProps {
   input: string;
@@ -16,6 +17,9 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ACCEPTED_TYPES = '.pdf,.png,.jpg,.jpeg,.webp';
 
 export function ChatInput({ input, setInput, loading, sendMessage, stopGeneration, attachment, onAttach, onAttachError }: ChatInputProps) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+  
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -73,8 +77,8 @@ export function ChatInput({ input, setInput, loading, sendMessage, stopGeneratio
           display: 'flex', alignItems: 'center', gap: 8,
           padding: '6px 12px', marginBottom: 8,
           borderRadius: 8,
-          backgroundColor: '#27272a',
-          color: '#a1a1aa', fontSize: 13
+          backgroundColor: isDark ? '#27272a' : '#e4e4e7',
+          color: isDark ? '#a1a1aa' : '#52525b', fontSize: 13
         }}>
           <span>📎</span>
           <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -109,8 +113,8 @@ export function ChatInput({ input, setInput, loading, sendMessage, stopGeneratio
           disabled={loading}
           style={{
             width: 44, height: 44, borderRadius: 12, border: 'none',
-            backgroundColor: '#27272a',
-            color: '#a1a1aa', cursor: loading ? 'not-allowed' : 'pointer',
+            backgroundColor: isDark ? '#27272a' : '#e4e4e7',
+            color: isDark ? '#a1a1aa' : '#52525b', cursor: loading ? 'not-allowed' : 'pointer',
             fontSize: 18,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             flexShrink: 0,
@@ -135,9 +139,9 @@ export function ChatInput({ input, setInput, loading, sendMessage, stopGeneratio
             maxHeight: 120,
             padding: '10px 14px',
             borderRadius: 12,
-            border: '1px solid #3f3f46',
-            backgroundColor: '#18181b',
-            color: '#f4f4f5',
+            border: isDark ? '1px solid #3f3f46' : '1px solid #d4d4d8',
+            backgroundColor: isDark ? '#18181b' : '#ffffff',
+            color: isDark ? '#f4f4f5' : '#18181b',
             fontSize: 14,
             resize: 'none',
             outline: 'none',
@@ -168,7 +172,7 @@ export function ChatInput({ input, setInput, loading, sendMessage, stopGeneratio
             disabled={!input.trim()}
             style={{
               width: 44, height: 44, borderRadius: 12, border: 'none',
-              backgroundColor: input.trim() ? '#2563eb' : '#3f3f46',
+              backgroundColor: input.trim() ? '#2563eb' : (isDark ? '#3f3f46' : '#d4d4d8'),
               color: 'white', cursor: input.trim() ? 'pointer' : 'not-allowed',
               fontSize: 18,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
