@@ -3,6 +3,8 @@ import { Message } from '../lib/types';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useTheme } from '../hooks/useTheme';
+import { MessageBubbleImage } from './MessageBubbleImage';
+import { MessageBubbleVideo } from './MessageBubbleVideo';
 
 interface MessageBubbleProps {
   message: Message;
@@ -10,6 +12,13 @@ interface MessageBubbleProps {
 }
 
 export function MessageBubble({ message, onRetry }: MessageBubbleProps) {
+  if (message.type === 'image_url') {
+    return <MessageBubbleImage message={message} onRetry={onRetry} />;
+  }
+  if (message.type === 'video_url' || message.type === 'video_generation') {
+    return <MessageBubbleVideo message={message} onRetry={onRetry} />;
+  }
+
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const isUser = message.role === 'user';

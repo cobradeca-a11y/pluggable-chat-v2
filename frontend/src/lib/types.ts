@@ -9,6 +9,7 @@ export interface Message {
   content: string;
   isError?: boolean;
   attachment?: Attachment;
+  type?: "text" | "image_url" | "image_base64" | "video_url" | "video_generation";
 }
 
 export interface ChatRequest {
@@ -24,7 +25,7 @@ export interface ChatResponse {
 }
 
 export interface ProviderSettings {
-  provider: "mock" | "openrouter" | "ollama" | "";
+  provider: string;
   model: string;
   apiKey: string;
 }

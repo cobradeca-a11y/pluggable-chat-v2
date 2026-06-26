@@ -5,7 +5,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 os.environ["LLM_PROVIDER"] = "mock"
-os.environ["RATE_LIMIT_RPM"] = "5"
+os.environ["RATE_LIMIT_RPM"] = "15"
 os.environ["ACTIVE_MIDDLEWARE"] = "rate_limit,request_logger"
 
 from fastapi.testclient import TestClient
@@ -19,7 +19,7 @@ def test_plugins_endpoint():
     data = response.json()
     assert isinstance(data, dict)
     assert "providers" in data
-    assert "mock" in data["providers"]
+    assert any(p["name"] == "mock" for p in data["providers"])
 
 def test_chat_sync():
     response = client.post(
@@ -44,12 +44,34 @@ def test_chat_stream():
         assert "data: I\n\n" in content
         assert "data: [DONE]\n\n" in content
 
+def test_generate_video_mock():
+    response = client.post(
+        "/api/generate/video",
+        json={"prompt": "test video", "provider": "kling"}
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert "job_id" in data
+    assert data["job_id"].startswith("kling_")
+
+def test_check_video_status():
+    response = client.post(
+        "/api/generate/video",
+        json={"prompt": "test video", "provider": "kling"}
+    )
+    job_id = response.json()["job_id"]
+    
+    response2 = client.get(f"/api/generate/video/{job_id}")
+    assert response2.status_code == 200
+    data2 = response2.json()
+    assert data2["status"] == "completed"
+    assert "progress" in data2
+    assert "url" in data2
+
 def test_rate_limit():
-    # Rate limit was set to 5 requests per minute.
-    # The previous tests consumed 3 requests. 
-    # Let's execute 5 more to guarantee we hit the 429.
+    # Rate limit was set to 15 requests per minute.
     status_codes = []
-    for _ in range(5):
+    for _ in range(15):
         resp = client.get("/api/health")
         status_codes.append(resp.status_code)
     

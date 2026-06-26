@@ -24,3 +24,12 @@ class LLMProvider(Protocol):
 
     async def health(self) -> bool:
         ...
+
+    async def generate_image(self, prompt: str) -> str:
+        raise NotImplementedError
+
+    async def generate_video(self, prompt: str) -> dict:
+        raise NotImplementedError
+
+    async def check_video_status(self, job_id: str) -> dict:
+        raise NotImplementedError

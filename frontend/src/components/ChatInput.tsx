@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Attachment } from '../lib/types';
 import { useTheme } from '../hooks/useTheme';
 
@@ -6,34 +6,52 @@ interface ChatInputProps {
   input: string;
   setInput: (value: string) => void;
   loading: boolean;
-  sendMessage: (text: string) => void;
+  sendMessage: (text: string, stream?: boolean, attachment?: Attachment, mode?: string) => void;
   stopGeneration?: () => void;
   attachment: Attachment | null;
   onAttach: (attachment: Attachment | null) => void;
   onAttachError?: (message: string) => void;
+  providerCapabilities?: { canText: boolean, canImage: boolean, canVideo: boolean };
 }
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ACCEPTED_TYPES = '.pdf,.png,.jpg,.jpeg,.webp';
 
-export function ChatInput({ input, setInput, loading, sendMessage, stopGeneration, attachment, onAttach, onAttachError }: ChatInputProps) {
+export function ChatInput({ 
+  input, setInput, loading, sendMessage, stopGeneration, 
+  attachment, onAttach, onAttachError, providerCapabilities 
+}: ChatInputProps) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+  const [mode, setMode] = useState<'text' | 'image' | 'video'>('text');
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    if (providerCapabilities) {
+      if (!providerCapabilities.canText) {
+        if (providerCapabilities.canImage) setMode('image');
+        else if (providerCapabilities.canVideo) setMode('video');
+      }
+      // If capabilities change, ensure current mode is valid
+      if (mode === 'image' && !providerCapabilities.canImage) setMode('text');
+      if (mode === 'video' && !providerCapabilities.canVideo) setMode('text');
+      if (mode === 'text' && !providerCapabilities.canText && providerCapabilities.canImage) setMode('image');
+    }
+  }, [providerCapabilities]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || loading) return;
-    sendMessage(input);
+    sendMessage(input, mode === 'text', attachment || undefined, mode);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       if (loading) return;
-      sendMessage(input);
+      sendMessage(input, mode === 'text', attachment || undefined, mode);
     }
   };
 
@@ -57,7 +75,6 @@ export function ChatInput({ input, setInput, loading, sendMessage, stopGeneratio
     const reader = new FileReader();
     reader.onload = () => {
       const result = reader.result as string;
-      // Extrair apenas o base64, sem o prefixo data:...;base64,
       const base64 = result.split(',')[1] || result;
       onAttach({
         name: file.name,
@@ -69,10 +86,61 @@ export function ChatInput({ input, setInput, loading, sendMessage, stopGeneratio
     e.target.value = '';
   };
 
+  const hasMultipleModes = providerCapabilities && (
+    (providerCapabilities.canText ? 1 : 0) + 
+    (providerCapabilities.canImage ? 1 : 0) + 
+    (providerCapabilities.canVideo ? 1 : 0) > 1
+  );
+
   return (
     <div>
+      {/* Mode Selector */}
+      {hasMultipleModes && (
+        <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+          {providerCapabilities?.canText && (
+            <button 
+              type="button" 
+              onClick={() => setMode('text')}
+              style={{ 
+                padding: '4px 12px', borderRadius: 12, fontSize: 12, cursor: 'pointer', border: 'none',
+                backgroundColor: mode === 'text' ? '#2563eb' : (isDark ? '#27272a' : '#e4e4e7'),
+                color: mode === 'text' ? '#ffffff' : (isDark ? '#a1a1aa' : '#52525b')
+              }}
+            >
+              Texto
+            </button>
+          )}
+          {providerCapabilities?.canImage && (
+            <button 
+              type="button" 
+              onClick={() => setMode('image')}
+              style={{ 
+                padding: '4px 12px', borderRadius: 12, fontSize: 12, cursor: 'pointer', border: 'none',
+                backgroundColor: mode === 'image' ? '#2563eb' : (isDark ? '#27272a' : '#e4e4e7'),
+                color: mode === 'image' ? '#ffffff' : (isDark ? '#a1a1aa' : '#52525b')
+              }}
+            >
+              Imagem
+            </button>
+          )}
+          {providerCapabilities?.canVideo && (
+            <button 
+              type="button" 
+              onClick={() => setMode('video')}
+              style={{ 
+                padding: '4px 12px', borderRadius: 12, fontSize: 12, cursor: 'pointer', border: 'none',
+                backgroundColor: mode === 'video' ? '#2563eb' : (isDark ? '#27272a' : '#e4e4e7'),
+                color: mode === 'video' ? '#ffffff' : (isDark ? '#a1a1aa' : '#52525b')
+              }}
+            >
+              Vídeo
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Preview do anexo */}
-      {attachment && (
+      {attachment && mode === 'text' && (
         <div style={{
           display: 'flex', alignItems: 'center', gap: 8,
           padding: '6px 12px', marginBottom: 8,
@@ -99,7 +167,6 @@ export function ChatInput({ input, setInput, loading, sendMessage, stopGeneratio
       )}
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
-        {/* Botão de clipe */}
         <input
           ref={fileInputRef}
           type="file"
@@ -110,15 +177,15 @@ export function ChatInput({ input, setInput, loading, sendMessage, stopGeneratio
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          disabled={loading}
+          disabled={loading || mode !== 'text'}
           style={{
             width: 44, height: 44, borderRadius: 12, border: 'none',
             backgroundColor: isDark ? '#27272a' : '#e4e4e7',
-            color: isDark ? '#a1a1aa' : '#52525b', cursor: loading ? 'not-allowed' : 'pointer',
+            color: isDark ? '#a1a1aa' : '#52525b', cursor: (loading || mode !== 'text') ? 'not-allowed' : 'pointer',
             fontSize: 18,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            display: mode !== 'text' ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center',
             flexShrink: 0,
-            opacity: loading ? 0.6 : 1
+            opacity: (loading || mode !== 'text') ? 0.6 : 1
           }}
           title="Anexar arquivo"
         >
@@ -130,7 +197,7 @@ export function ChatInput({ input, setInput, loading, sendMessage, stopGeneratio
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Digite uma mensagem..."
+          placeholder={mode === 'video' ? "Descreva o vídeo que deseja gerar..." : mode === 'image' ? "Descreva a imagem que deseja gerar..." : "Digite uma mensagem..."}
           disabled={loading}
           rows={1}
           style={{

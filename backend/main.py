@@ -32,16 +32,39 @@ async def health_check() -> dict[str, str]:
 @app.get("/api/plugins")
 async def list_plugins() -> dict:
     providers = get_all_providers()
-    capabilities = {}
+    provider_list = []
+    
+    from core.protocol import LLMProvider
+
     for name, provider_class in providers.items():
         try:
             instance = provider_class()
             supported = getattr(instance, 'supported_attachments', [])
-            capabilities[name] = {"supported_attachments": supported}
+            
+            def is_implemented(method_name: str) -> bool:
+                method = getattr(provider_class, method_name, None)
+                if not method:
+                    return False
+                base_method = getattr(LLMProvider, method_name, None)
+                return method is not base_method
+
+            provider_list.append({
+                "name": name,
+                "can_text": is_implemented("complete") or is_implemented("stream"),
+                "can_image": is_implemented("generate_image"),
+                "can_video": is_implemented("generate_video"),
+                "supported_attachments": supported
+            })
         except Exception:
-            capabilities[name] = {"supported_attachments": []}
+            provider_list.append({
+                "name": name,
+                "can_text": False,
+                "can_image": False,
+                "can_video": False,
+                "supported_attachments": []
+            })
+            
     return {
-        "providers": list(providers.keys()),
-        "active_provider": settings.LLM_PROVIDER,
-        "capabilities": capabilities
+        "providers": provider_list,
+        "active_provider": settings.LLM_PROVIDER
     }

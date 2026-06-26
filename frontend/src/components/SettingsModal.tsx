@@ -10,10 +10,25 @@ interface SettingsModalProps {
 
 export function SettingsModal({ isOpen, onClose, settings, onSave }: SettingsModalProps) {
   const [localSettings, setLocalSettings] = useState<ProviderSettings>(settings);
+  const [providers, setProviders] = useState<any[]>([]);
 
   useEffect(() => {
     if (isOpen) {
       setLocalSettings(settings);
+      
+      const fetchProviders = async () => {
+        try {
+          const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://pluggable-chat-v2-production.up.railway.app';
+          const res = await fetch(`${baseUrl}/api/plugins`);
+          if (res.ok) {
+            const data = await res.json();
+            setProviders(data.providers || []);
+          }
+        } catch (err) {
+          console.error("Failed to fetch plugins", err);
+        }
+      };
+      fetchProviders();
     }
   }, [isOpen, settings]);
 
@@ -34,6 +49,8 @@ export function SettingsModal({ isOpen, onClose, settings, onSave }: SettingsMod
       defaultModel = 'openrouter/auto:free';
     } else if (provider === 'ollama' && !defaultModel.includes('llama')) {
       defaultModel = 'llama3.2';
+    } else if (provider === 'flux') {
+      defaultModel = 'flux.1';
     }
 
     setLocalSettings({ ...localSettings, provider, model: defaultModel });
@@ -71,9 +88,37 @@ export function SettingsModal({ isOpen, onClose, settings, onSave }: SettingsMod
               className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors duration-300"
             >
               <option value="">Padrão do Servidor</option>
-              <option value="mock">Mock (Testes)</option>
-              <option value="openrouter">OpenRouter</option>
-              <option value="ollama">Ollama (Local)</option>
+              {providers.length > 0 ? (
+                <>
+                  {providers.filter(p => p.can_text).length > 0 && (
+                    <optgroup label="Provedores de Texto">
+                      {providers.filter(p => p.can_text).map(p => (
+                        <option key={`text-${p.name}`} value={p.name}>{p.name}</option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {providers.filter(p => p.can_image).length > 0 && (
+                    <optgroup label="Provedores de Imagem">
+                      {providers.filter(p => p.can_image).map(p => (
+                        <option key={`img-${p.name}`} value={p.name}>{p.name}</option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {providers.filter(p => p.can_video).length > 0 && (
+                    <optgroup label="Provedores de Vídeo">
+                      {providers.filter(p => p.can_video).map(p => (
+                        <option key={`vid-${p.name}`} value={p.name}>{p.name}</option>
+                      ))}
+                    </optgroup>
+                  )}
+                </>
+              ) : (
+                <>
+                  <option value="mock">Mock (Testes)</option>
+                  <option value="openrouter">OpenRouter</option>
+                  <option value="ollama">Ollama (Local)</option>
+                </>
+              )}
             </select>
           </div>
 

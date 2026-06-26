@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Literal
 from core.protocol import Message, Attachment
 
 class ChatRequest(BaseModel):
@@ -11,3 +11,10 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     content: str
+    type: Literal["text", "image_url", "image_base64", "video_url"] = "text"
+
+class ImageRequest(BaseModel):
+    prompt: str
+    provider: Optional[str] = None
+    model: Optional[str] = None
+    api_key: Optional[str] = None

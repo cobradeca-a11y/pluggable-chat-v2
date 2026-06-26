@@ -25,7 +25,7 @@ export default function Home() {
     conversations
   } = useChat();
 
-  const { provider, model, supportedAttachments } = useActiveModel(providerSettings);
+  const { provider, model, supportedAttachments, canText, canImage, canVideo } = useActiveModel(providerSettings);
 
   const [pendingAttachment, setPendingAttachment] = useState<Attachment | null>(null);
 
@@ -85,9 +85,9 @@ export default function Home() {
     }
   }, [messages, isAutoScroll]);
 
-  const handleSendMessage = (txt: string) => {
+  const handleSendMessage = (txt: string, stream = true, attachment?: Attachment, mode?: string) => {
     setIsAutoScroll(true);
-    sendMessage(txt, true, pendingAttachment || undefined);
+    sendMessage(txt, stream, attachment, mode);
     setPendingAttachment(null);
   };
 
@@ -185,8 +185,6 @@ export default function Home() {
               </button>
             )}
 
-
-
             <button
               onClick={() => setIsSettingsOpen(true)}
               style={{
@@ -263,6 +261,7 @@ export default function Home() {
               attachment={pendingAttachment}
               onAttach={handleAttach}
               onAttachError={(msg) => showToast(msg, 'error')}
+              providerCapabilities={{ canText, canImage, canVideo }}
             />
             <div style={{ textAlign: 'center', marginTop: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
               <span style={{ fontSize: 10, color: '#52525b', textTransform: 'uppercase', letterSpacing: 1 }}>

@@ -5,13 +5,19 @@ interface ActiveModelData {
   provider: string;
   model: string;
   supportedAttachments: string[];
+  canText: boolean;
+  canImage: boolean;
+  canVideo: boolean;
 }
 
 export function useActiveModel(providerSettings: ProviderSettings) {
   const [activeModelData, setActiveModelData] = useState<ActiveModelData>({
     provider: providerSettings.provider,
     model: providerSettings.model,
-    supportedAttachments: []
+    supportedAttachments: [],
+    canText: true,
+    canImage: false,
+    canVideo: false
   });
 
   useEffect(() => {
@@ -24,30 +30,33 @@ export function useActiveModel(providerSettings: ProviderSettings) {
         if (res.ok) {
           const data = await res.json();
           if (isMounted) {
-            // Determina qual provider está ativo (prioridade: settings local > backend)
             const activeProvider = providerSettings.provider || data.active_provider || 'mock';
             const activeModel = providerSettings.model || data.active_model || '';
 
-            // Busca supported_attachments do provider ativo
-            const capabilities = data.capabilities || {};
-            const providerCaps = capabilities[activeProvider] || {};
-            const supported: string[] = providerCaps.supported_attachments || [];
+            const providersList = data.providers || [];
+            const providerData = providersList.find((p: any) => p.name === activeProvider) || {};
+            const supported: string[] = providerData.supported_attachments || [];
 
             setActiveModelData({
               provider: activeProvider,
               model: activeModel,
-              supportedAttachments: supported
+              supportedAttachments: supported,
+              canText: providerData.can_text ?? true,
+              canImage: providerData.can_image ?? false,
+              canVideo: providerData.can_video ?? false
             });
           }
         }
       } catch (error) {
         console.error("Erro ao buscar plugins para modelo ativo:", error);
-        // Fallback: usa settings locais sem capabilities
         if (isMounted) {
           setActiveModelData({
             provider: providerSettings.provider || 'mock',
             model: providerSettings.model || '',
-            supportedAttachments: []
+            supportedAttachments: [],
+            canText: true,
+            canImage: false,
+            canVideo: false
           });
         }
       }

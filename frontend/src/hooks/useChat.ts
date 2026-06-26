@@ -61,7 +61,7 @@ export function useChat() {
   }, [showToast]);
 
   const sendMessage = useCallback(
-    async (text: string, stream = true, attachment?: Attachment) => {
+    async (text: string, stream = true, attachment?: Attachment, mode?: string) => {
       if (!text.trim()) return;
 
       if (!conv.activeId) {
@@ -92,6 +92,62 @@ export function useChat() {
         // Para ambos os casos (stream ou não), adicionamos o placeholder do assistant
         // assim se der erro, temos uma mensagem para marcar como isError
         setMessages([...allMessages, { role: "assistant", content: "" }]);
+
+        if (mode === "image") {
+          const imagePayload: any = { prompt: text };
+          if (providerSettings.provider) imagePayload.provider = providerSettings.provider;
+          if (providerSettings.model) imagePayload.model = providerSettings.model;
+          if (providerSettings.apiKey && providerSettings.provider === 'openrouter') {
+            imagePayload.api_key = providerSettings.apiKey;
+          }
+
+          const response = await fetch(`${backendUrl}/api/generate/image`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(imagePayload),
+            signal: controller.signal
+          });
+
+          if (!response.ok) {
+            throw new Error(`Error: ${response.status} - ${response.statusText}`);
+          }
+
+          const data = await response.json();
+          setMessages((prev) => {
+            const updated = [...prev];
+            updated[updated.length - 1] = { role: "assistant", content: data.content, type: data.type || "image_url" };
+            return updated;
+          });
+          return;
+        }
+
+        if (mode === "video") {
+          const videoPayload: any = { prompt: text };
+          if (providerSettings.provider) videoPayload.provider = providerSettings.provider;
+          if (providerSettings.model) videoPayload.model = providerSettings.model;
+          if (providerSettings.apiKey && providerSettings.provider === 'openrouter') {
+            videoPayload.api_key = providerSettings.apiKey;
+          }
+
+          const response = await fetch(`${backendUrl}/api/generate/video`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(videoPayload),
+            signal: controller.signal
+          });
+
+          if (!response.ok) {
+            throw new Error(`Error: ${response.status} - ${response.statusText}`);
+          }
+
+          const data = await response.json();
+          setMessages((prev) => {
+            const updated = [...prev];
+            updated[updated.length - 1] = { role: "assistant", content: data.job_id, type: "video_generation" };
+            return updated;
+          });
+          return;
+        }
 
         const payload: ChatRequest = { messages: contextMessages };
         if (attachment) {
