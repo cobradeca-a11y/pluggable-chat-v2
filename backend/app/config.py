@@ -1,7 +1,7 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
-    LLM_PROVIDER: str = "openrouter"
+    LLM_PROVIDER: str = "mock"
     OPENROUTER_API_KEY: str = ""
     OPENROUTER_MODEL: str = "openrouter/auto:free"
     OLLAMA_BASE_URL: str = "http://localhost:11434"

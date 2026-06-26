@@ -1,16 +1,22 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from core.loader import load_plugins
 from core.registry import get_all_providers, get_all_middlewares
 from app.config import settings
-
 from app.routers.chat import router as chat_router
 
-# Load all plugins before starting the app
 load_plugins()
 
 app = FastAPI(title="Pluggable Chat")
 
-# Apply active middlewares
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 active_middlewares = [m.strip() for m in settings.ACTIVE_MIDDLEWARE.split(",") if m.strip()]
 all_middlewares = get_all_middlewares()
 for name in active_middlewares:

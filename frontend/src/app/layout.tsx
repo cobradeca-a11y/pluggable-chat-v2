@@ -27,7 +27,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50 antialiased selection:bg-blue-500/30 transition-colors duration-300">
+      <body className="text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50 antialiased selection:bg-blue-500/30 transition-colors duration-300">
         {children}
       </body>
     </html>

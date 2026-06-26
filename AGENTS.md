@@ -95,21 +95,25 @@ pluggable-chat/
 
     │   ├── components/
 
-    │   │   ├── MessageBubble.tsx
-
     │   │   ├── ChatInput.tsx
 
-    │   │   └── MarkdownRenderer.tsx
+    │   │   ├── MessageBubble.tsx
+
+    │   │   ├── SettingsModal.tsx
+
+    │   │   ├── Toast.tsx
+
+    │   │   └── TypingIndicator.tsx
 
     │   ├── hooks/
 
-    │   │   └── useChat.ts           ← estado + streaming
+    │   │   ├── useChat.ts           ← estado + streaming
+
+    │   │   └── useTheme.ts          ← tema claro/escuro
 
     │   └── lib/
 
-    │       ├── types.ts
-
-    │       └── api.ts               ← chama o backend FastAPI
+    │       └── types.ts
 
     └── ...config files
 ```
@@ -250,7 +254,7 @@ def setup(app: FastAPI) -> None:
 
 |---|---|---|
 
-| `LLM_PROVIDER` | `openrouter` | Provedor ativo. Opções: `openrouter`, `ollama`, `mock` |
+| `LLM_PROVIDER` | `mock` | Provedor ativo. Opções: `openrouter`, `ollama`, `mock` |
 
 | `OPENROUTER_API_KEY` | — | Obrigatório se `LLM_PROVIDER=openrouter` |
 

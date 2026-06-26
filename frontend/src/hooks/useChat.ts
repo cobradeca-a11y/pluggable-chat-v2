@@ -1,10 +1,11 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Message, ProviderSettings, ChatRequest } from "../lib/types";
 
 export function useChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
   const [toast, setToast] = useState<{message: string, type: 'success' | 'error'} | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [providerSettings, setProviderSettings] = useState<ProviderSettings>({
@@ -75,6 +76,9 @@ export function useChat() {
       setInput("");
       setLoading(true);
 
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
       const endpoint = stream ? "/api/chat/stream" : "/api/chat";
 
@@ -100,6 +104,7 @@ export function useChat() {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
+            signal: controller.signal
           });
 
           if (!response.ok) {
@@ -160,7 +165,11 @@ export function useChat() {
             return updated;
           });
         }
-      } catch (error) {
+      } catch (error: any) {
+        if (error.name === 'AbortError') {
+          console.log("Geração interrompida pelo usuário");
+          return;
+        }
         console.error("Failed to send message:", error);
         
         setMessages((prev) => {
@@ -201,9 +210,13 @@ export function useChat() {
     localStorage.removeItem("pluggable_chat_history");
   }, []);
 
+  const stopGeneration = useCallback(() => {
+    abortControllerRef.current?.abort();
+  }, []);
+
   return { 
     messages, input, setInput, loading, toast, 
     clearToast, showToast, sendMessage, retryLastMessage, clearChat,
-    providerSettings, saveProviderSettings
+    providerSettings, saveProviderSettings, stopGeneration
   };
 }
