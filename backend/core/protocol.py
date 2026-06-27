@@ -33,3 +33,9 @@ class LLMProvider(Protocol):
 
     async def check_video_status(self, job_id: str) -> dict:
         raise NotImplementedError
+
+    async def generate_audio(self, prompt: str) -> dict:
+        raise NotImplementedError
+
+    async def check_audio_status(self, job_id: str) -> dict:
+        raise NotImplementedError

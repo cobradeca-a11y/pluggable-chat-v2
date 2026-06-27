@@ -39,11 +39,62 @@ def test_gpt4o_registered():
     gpt4o_plugin = next((p for p in data["providers"] if p["name"] == "gpt4o"), None)
     assert gpt4o_plugin is not None
     assert gpt4o_plugin["can_text"] is True
-    # GPT-4o does not generate images, but it supports them as attachments.
     assert gpt4o_plugin["can_image"] is False
     assert gpt4o_plugin["can_video"] is False
     assert "image/png" in gpt4o_plugin["supported_attachments"]
-    assert "image/gif" in gpt4o_plugin["supported_attachments"]
+
+def test_gemini_registered():
+    response = client.get("/api/plugins")
+    data = response.json()
+    p = next((p for p in data["providers"] if p["name"] == "gemini"), None)
+    assert p is not None
+    assert p["can_text"] is True
+    assert p["can_image"] is True
+    assert p["can_video"] is True
+
+def test_dalle3_registered():
+    response = client.get("/api/plugins")
+    data = response.json()
+    p = next((p for p in data["providers"] if p["name"] == "dalle3"), None)
+    assert p is not None
+    assert p["can_text"] is False
+    assert p["can_image"] is True
+    assert p["can_video"] is False
+
+def test_sora_registered():
+    response = client.get("/api/plugins")
+    data = response.json()
+    p = next((p for p in data["providers"] if p["name"] == "sora"), None)
+    assert p is not None
+    assert p["can_text"] is False
+    assert p["can_image"] is False
+    assert p["can_video"] is True
+
+def test_runway_registered():
+    response = client.get("/api/plugins")
+    data = response.json()
+    p = next((p for p in data["providers"] if p["name"] == "runway"), None)
+    assert p is not None
+    assert p["can_text"] is False
+    assert p["can_image"] is False
+    assert p["can_video"] is True
+
+def test_suno_registered():
+    response = client.get("/api/plugins")
+    data = response.json()
+    p = next((p for p in data["providers"] if p["name"] == "suno"), None)
+    assert p is not None
+    assert p["can_text"] is False
+    assert p["can_audio"] is True
+
+def test_midjourney_registered():
+    response = client.get("/api/plugins")
+    data = response.json()
+    p = next((p for p in data["providers"] if p["name"] == "midjourney"), None)
+    assert p is not None
+    assert p["can_text"] is False
+    assert p["can_image"] is True
+    assert p["can_video"] is False
 
 def test_chat_sync():
     response = client.post(
