@@ -331,6 +331,10 @@ cd frontend && npx tsc --noEmit
 | `openrouter` | `plugins/providers/openrouter.py` | `OPENROUTER_API_KEY` | Sim (tier free) |
 | `ollama` | `plugins/providers/ollama.py` | Ollama rodando localmente | Sim (100%) |
 | `mock` | `plugins/providers/mock.py` | Nada | Sim |
+| `flux` | `plugins/providers/flux.py` | Nada (Mock local) | Sim |
+| `kling` | `plugins/providers/kling.py` | Nada (Mock local) | Sim |
+| `claude` | `plugins/providers/claude.py` | `CLAUDE_API_KEY` | Não |
+| `gpt4o` | `plugins/providers/gpt4o.py` | `OPENAI_API_KEY` | Não |
 
 ---
 
@@ -349,17 +353,21 @@ cd frontend && npx tsc --noEmit
 |---|---|---|
 | Chat com streaming SSE | ✅ Implementado | — |
 | Tema claro/escuro | ✅ Implementado | — |
-| Modal de configurações (provider/model/apiKey) | ✅ Implementado | — |
+| Modal de configurações | ✅ Implementado | — |
 | Toast de notificações | ✅ Implementado | — |
-| Sidebar de conversas com histórico | ✅ Implementado | `SPEC_sidebar_conversas.md` |
 | Auto-scroll inteligente | ✅ Implementado | — |
-| Indicador de modelo ativo no rodapé | ✅ Implementado | — |
-| Busca no histórico de conversas | ✅ Implementado | `SPEC_sprint_S1.md` |
-| Renomear conversa manualmente | ✅ Implementado | `SPEC_sprint_S1.md` |
-| Exportar conversa (JSON/MD) | ✅ Implementado | `SPEC_sprint_S1.md` |
+| Sidebar com histórico | ✅ Implementado | `SPEC_sidebar_conversas.md` |
+| Indicador de modelo no rodapé | ✅ Implementado | — |
+| Memória de conversas | ✅ Implementado | `SPEC_sprint_S1.md` |
+| Upload de imagens | ✅ Implementado | `SPEC_sprint_S1.md` |
+| Renomear conversa | ✅ Implementado | `SPEC_sprint_S1.md` |
+| Exportar conversa | ✅ Implementado | `SPEC_sprint_S1.md` |
+| Busca no histórico | ✅ Implementado | `SPEC_sprint_S1.md` |
 | Atalhos de teclado | ✅ Implementado | `SPEC_sprint_S1.md` |
-| Memória de conversa (contexto) | ✅ Implementado | `SPEC_sprint_S1.md` |
-| Upload de arquivos (imagens) | ✅ Implementado | `SPEC_sprint_S1.md` |
+| Suporte a Imagem (Flux mock) | ✅ Implementado | `SPEC_sprint_S2_multimodal.md` |
+| Suporte a Vídeo (Kling mock) | ✅ Implementado | `SPEC_sprint_S2_multimodal.md` |
+
+Status: **S2 COMPLETA** | Backlog restante bloqueado
 
 ---
 
@@ -378,7 +386,6 @@ sem instrução explícita do dono do projeto**. Registradas aqui para não se p
 ### Backend
 - **Autenticação** — login simples (magic link ou OAuth) para separar histórico por usuário
 - **Histórico no servidor** — mover conversas do localStorage para banco de dados (Supabase/PostgreSQL)
-- **Provider: Anthropic direto** — plugin `anthropic.py` usando a SDK oficial
 - **Provider: Gemini** — plugin `gemini.py` via Google AI Studio
 - **Provider: Azure OpenAI** — plugin `azure_openai.py`
 - **Ferramenta: web search** — plugin em `tools/` que injeta resultados de busca no contexto

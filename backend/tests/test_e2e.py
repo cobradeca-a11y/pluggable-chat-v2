@@ -20,6 +20,30 @@ def test_plugins_endpoint():
     assert isinstance(data, dict)
     assert "providers" in data
     assert any(p["name"] == "mock" for p in data["providers"])
+    assert any(p["name"] == "claude" for p in data["providers"])
+
+def test_claude_registered():
+    response = client.get("/api/plugins")
+    data = response.json()
+    claude_plugin = next((p for p in data["providers"] if p["name"] == "claude"), None)
+    assert claude_plugin is not None
+    assert claude_plugin["can_text"] is True
+    # Claude does not generate images, but it supports them as attachments.
+    assert claude_plugin["can_image"] is False
+    assert claude_plugin["can_video"] is False
+    assert "image/png" in claude_plugin["supported_attachments"]
+
+def test_gpt4o_registered():
+    response = client.get("/api/plugins")
+    data = response.json()
+    gpt4o_plugin = next((p for p in data["providers"] if p["name"] == "gpt4o"), None)
+    assert gpt4o_plugin is not None
+    assert gpt4o_plugin["can_text"] is True
+    # GPT-4o does not generate images, but it supports them as attachments.
+    assert gpt4o_plugin["can_image"] is False
+    assert gpt4o_plugin["can_video"] is False
+    assert "image/png" in gpt4o_plugin["supported_attachments"]
+    assert "image/gif" in gpt4o_plugin["supported_attachments"]
 
 def test_chat_sync():
     response = client.post(
