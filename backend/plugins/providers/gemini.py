@@ -93,7 +93,27 @@ class GeminiProvider(LLMProvider):
             return False
 
     async def generate_image(self, prompt: str) -> str:
-        return "https://via.placeholder.com/1024x1024.png?text=Gemini+Mock+Image"
+        # Use Gemini's generateContent endpoint with responseMimeType=image/png
+        payload = {
+            "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+            "generationConfig": {"responseMimeType": "image/png"}
+        }
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{self.base_url}/generateContent",
+                json=payload,
+                headers=self.headers,
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+            data = response.json()
+            # Expected path to image URL in response (simplified)
+            try:
+                return data["candidates"][0]["content"]["parts"][0]["fileData"]["uri"]
+            except Exception as e:
+                logger.error(f"Gemini image generation failed: {e}")
+                raise
+
 
     async def generate_video(self, prompt: str) -> dict:
         return {"job_id": "gemini_mock_job_123", "status": "queued"}
