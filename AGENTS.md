@@ -211,6 +211,9 @@ class MeuProvedor(LLMProvider):
 
     async def health(self) -> bool:
         return True
+
+    # Para provedores de áudio/vídeo/imagem, implemente os métodos equivalentes (ex: generate_audio)
+    # Todos os métodos opcionais (imagem, vídeo, áudio) levantam NotImplementedError por padrão.
 ```
 
 ---
@@ -265,6 +268,9 @@ def setup(app: FastAPI) -> None:
 
 1. **`core/protocol.py` é imutável.** Nunca modifique a assinatura de `LLMProvider`.
    Adicionar métodos opcionais é permitido com `NotImplementedError` como default.
+   *Novos métodos registrados (S3):*
+   - `generate_audio(prompt: str) -> dict` (retorna `job_id`)
+   - `check_audio_status(job_id: str) -> dict` (retorna `status`, `url`)
 
 2. **Plugins nunca importam uns aos outros.** Cada plugin é independente.
    Dependências compartilhadas vão em `core/`.
@@ -321,6 +327,8 @@ cd frontend && npx tsc --noEmit
 | 2026-06 | MEMORY_WINDOW=20 mensagens no payload ao backend | Evita estourar contexto; histórico completo salvo no localStorage |
 | 2026-06 | Exportação de conversa client-side via Blob + createObjectURL | Sem backend, sem dependência externa |
 | 2026-06 | Título da conversa gerado da primeira mensagem do usuário (máx 40 chars) | Sem input manual; rename manual disponível via duplo clique na sidebar |
+| 2026-06 | Suporte a áudio como capability primeira classe | Suno requer `generate_audio` + `check_audio_status` |
+| 2026-06 | 6 novos provedores (Gemini, DALL-E, Sora, Runway, Midjourney, Suno) | Expandir multimodalidade |
 
 ---
 
@@ -335,6 +343,12 @@ cd frontend && npx tsc --noEmit
 | `kling` | `plugins/providers/kling.py` | Nada (Mock local) | Sim |
 | `claude` | `plugins/providers/claude.py` | `CLAUDE_API_KEY` | Não |
 | `gpt4o` | `plugins/providers/gpt4o.py` | `OPENAI_API_KEY` | Não |
+| `gemini` | `plugins/providers/gemini.py` | `GOOGLE_API_KEY` | Sim (tier free) |
+| `dalle3` | `plugins/providers/dalle3.py` | `OPENAI_API_KEY` | Não |
+| `sora` | `plugins/providers/sora.py` | `OPENAI_API_KEY` | Não |
+| `runway` | `plugins/providers/runway.py` | `RUNWAY_API_KEY` | Não |
+| `suno` | `plugins/providers/suno.py` | `SUNO_API_KEY` | Não |
+| `midjourney` | `plugins/providers/midjourney.py` | `MIDJOURNEY_API_KEY` | Não |
 
 ---
 
@@ -367,7 +381,7 @@ cd frontend && npx tsc --noEmit
 | Suporte a Imagem (Flux mock) | ✅ Implementado | `SPEC_sprint_S2_multimodal.md` |
 | Suporte a Vídeo (Kling mock) | ✅ Implementado | `SPEC_sprint_S2_multimodal.md` |
 
-Status: **S2 COMPLETA** | Backlog restante bloqueado
+Status: **S3 COMPLETA (Multimodalidade + 6 Providers)** | Backlog restante bloqueado
 
 ---
 
@@ -386,7 +400,6 @@ sem instrução explícita do dono do projeto**. Registradas aqui para não se p
 ### Backend
 - **Autenticação** — login simples (magic link ou OAuth) para separar histórico por usuário
 - **Histórico no servidor** — mover conversas do localStorage para banco de dados (Supabase/PostgreSQL)
-- **Provider: Gemini** — plugin `gemini.py` via Google AI Studio
 - **Provider: Azure OpenAI** — plugin `azure_openai.py`
 - **Ferramenta: web search** — plugin em `tools/` que injeta resultados de busca no contexto
 - **Ferramenta: RAG simples** — upload de documentos, embeddings, busca semântica antes de responder

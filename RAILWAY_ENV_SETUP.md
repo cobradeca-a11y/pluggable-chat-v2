@@ -27,15 +27,20 @@ Verifique quais variáveis já estão presentes e qual o status atual delas para
 
 ## 3. Seção: Adicionar Novas Variáveis
 
-Para incluir novas variáveis, como as configurações recém-implementadas do **Claude** ou **Ollama**, clique no botão **New Variable** (ou **Add Variable**) na aba *Variables*.
+Para incluir novas variáveis, como as configurações recém-implementadas do **Claude**, **Ollama**, ou dos provedores multimodais (**Gemini, DALL-E 3, Sora, Runway, Suno e Midjourney**), clique no botão **New Variable** (ou **Add Variable**) na aba *Variables*.
 
 Insira as seguintes variáveis com seus respectivos valores (ajuste as chaves reais antes de salvar):
 
 ```env
+LLM_PROVIDER=openrouter
 OLLAMA_BASE_URL=http://localhost:11434
 OLLAMA_MODEL=llama3.2
 CLAUDE_API_KEY=sk-ant-xxxxx
 OPENAI_API_KEY=sk-xxxxx
+GOOGLE_API_KEY=AIzaSy...
+RUNWAY_API_KEY=sua_chave
+SUNO_API_KEY=sua_chave
+MIDJOURNEY_API_KEY=sua_chave
 RATE_LIMIT_RPM=30
 ACTIVE_MIDDLEWARE=rate_limit,request_logger
 ```
