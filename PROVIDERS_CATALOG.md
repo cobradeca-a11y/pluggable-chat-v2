@@ -101,7 +101,7 @@ Notes: Suporta vision (image_url ou base64)
 ### Gemini 1.5 Pro (Google)
 ```
 Provider Name: gemini
-Status: 🔲 Roadmap
+Status: ✅ Implementado
 Pricing: 💵 Pago (por token)
 API Key Env: GOOGLE_API_KEY
 Model Env: GOOGLE_MODEL (default: gemini-1.5-pro)
@@ -197,7 +197,7 @@ Notes: Leve, bom para NPCs e narrativas simples
 ### DALL-E 3 (OpenAI)
 ```
 Provider Name: dall-e-3
-Status: 🔲 Roadmap
+Status: ✅ Implementado
 Pricing: 💵 Pago (por geração)
 API Key Env: OPENAI_API_KEY (mesmo de GPT-4o)
 Model Env: dall-e-3
@@ -225,7 +225,7 @@ Notes: Qualidade alta, menos custoso que DALL-E para alguns estilos
 ### Midjourney
 ```
 Provider Name: midjourney
-Status: 🔲 Roadmap
+Status: ✅ Implementado (mock)
 Pricing: 💵 Pago (assinatura)
 Integration: Via API de terceiros (não oficial)
 Notes: Requer webhook setup, complexo de integrar
@@ -238,7 +238,7 @@ Notes: Requer webhook setup, complexo de integrar
 ### Sora (OpenAI)
 ```
 Provider Name: sora
-Status: 🔲 Roadmap
+Status: ✅ Implementado
 Pricing: 💵 Pago (beta limitado)
 API Key Env: OPENAI_API_KEY
 Base URL: https://api.openai.com/v1
@@ -251,7 +251,7 @@ Notes: Geração texto→vídeo, ainda em beta restrito
 ### Runway Gen-3 (Runway)
 ```
 Provider Name: runway
-Status: 🔲 Roadmap
+Status: ✅ Implementado
 Pricing: 💵 Pago (por minuto de vídeo)
 API Key Env: RUNWAY_API_KEY
 Base URL: https://api.runwayml.com/v1
@@ -277,7 +277,7 @@ Notes: Mock atual, real quando integrado
 ### Suno
 ```
 Provider Name: suno
-Status: 🔲 Roadmap
+Status: ✅ Implementado
 Pricing: 💚 Tier gratuito limitado | 💵 Pago (assinatura)
 API Key Env: SUNO_API_KEY
 Base URL: https://api.suno.ai/v1
@@ -299,13 +299,13 @@ Notes: Geração musical, ainda em beta
 ### Pagos (Requerem API Key)
 - 💵 Claude (Anthropic)
 - 💵 GPT-4o (OpenAI)
-- 💵 Gemini (Google)
+- 💵 Gemini 1.5 Pro (Google)
 - 💵 DALL-E 3 (OpenAI)
-- 💵 Flux (fal.ai)
 - 💵 Sora (OpenAI)
-- 💵 Runway (Runway)
+- 💵 Runway Gen-3 (Runway)
 - 💵 Suno (Suno AI)
-- 💵 Midjourney (assinatura)
+- 💵 Midjourney (Via API Terceiros)
+- 💵 Flux (fal.ai)
 
 ### Híbridos (Gratuito Local OU Pago API)
 - Ollama: modelos de código/finanças/games (gratuito local)

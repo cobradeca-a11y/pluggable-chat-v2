@@ -12,9 +12,9 @@ Arquitetura Plug and Play — cada modelo é um provider isolado.
 | Phi-3 | 🎮 Games | NPCs | Microsoft | 🔲 |
 | GPT-4o | 📝 Texto/Multimodal | Geral | OpenAI | ✅ |
 | Claude 3.5 Sonnet | 📝 Texto/Lógica | Raciocínio | Anthropic | ✅ |
-| Gemini 1.5 Pro | 📝 Texto/Multimodal | Geral+vídeo | Google | 🔲 |
-| DALL-E 3 | 🖼️ Imagem | Alta qualidade | OpenAI | 🔲 |
-| Midjourney | 🖼️ Imagem | Artístico | Midjourney | 🔲 |
-| Sora | 🎬 Vídeo | Texto→vídeo | OpenAI | 🔲 |
-| Runway Gen-3 | 🎬 Vídeo | Transformação | Runway | 🔲 |
-| Suno | 🎵 Áudio/Música | Geração | Suno AI | 🔲 |
+| Gemini 1.5 Pro | 📝 Texto/Multimodal | Geral+vídeo | Google | ✅ |
+| DALL-E 3 | 🖼️ Imagem | Alta qualidade | OpenAI | ✅ |
+| Midjourney | 🖼️ Imagem | Artístico | Midjourney | ✅ |
+| Sora | 🎬 Vídeo | Texto→vídeo | OpenAI | ✅ |
+| Runway Gen-3 | 🎬 Vídeo | Transformação | Runway | ✅ |
+| Suno | 🎵 Áudio/Música | Geração | Suno AI | ✅ |
