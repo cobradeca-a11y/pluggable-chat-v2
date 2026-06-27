@@ -87,3 +87,30 @@ async def check_video(job_id: str) -> dict:
         return await provider.check_video_status(job_id)
     except NotImplementedError:
         raise HTTPException(status_code=501, detail="Provider não suporta vídeo")
+
+@router.post("/api/generate/audio")
+async def generate_audio(request: ImageRequest) -> dict:
+    provider = _get_active_provider(request)
+    try:
+        return await provider.generate_audio(request.prompt)
+    except NotImplementedError:
+        raise HTTPException(status_code=501, detail="Provider não suporta áudio")
+
+@router.get("/api/generate/audio/{job_id}")
+async def check_audio(job_id: str) -> dict:
+    parts = job_id.split("_", 1)
+    if len(parts) == 2:
+        provider_name = parts[0]
+    else:
+        provider_name = settings.LLM_PROVIDER
+        
+    provider_class = get_provider(provider_name)
+    if not provider_class:
+        raise HTTPException(status_code=404, detail="Provider não encontrado")
+        
+    provider = provider_class()
+    try:
+        return await provider.check_audio_status(job_id)
+    except NotImplementedError:
+        raise HTTPException(status_code=501, detail="Provider não suporta áudio")
+

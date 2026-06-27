@@ -93,23 +93,35 @@ class GeminiProvider(LLMProvider):
             return False
 
     async def generate_image(self, prompt: str) -> str:
-        # Use Gemini's generateContent endpoint with responseMimeType=image/png
+        # Use Gemini's native generateContent endpoint (not OpenAI-compatible)
+        native_base = "https://generativelanguage.googleapis.com/v1beta"
+        url = f"{native_base}/models/{self.model}:generateContent"
         payload = {
             "contents": [{"role": "user", "parts": [{"text": prompt}]}],
             "generationConfig": {"responseMimeType": "image/png"}
         }
+        headers = {"Content-Type": "application/json"}
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                f"{self.base_url}/generateContent",
+                url,
+                params={"key": self.api_key},
                 json=payload,
-                headers=self.headers,
+                headers=headers,
                 timeout=self.timeout,
             )
             response.raise_for_status()
             data = response.json()
-            # Expected path to image URL in response (simplified)
             try:
-                return data["candidates"][0]["content"]["parts"][0]["fileData"]["uri"]
+                parts = data["candidates"][0]["content"]["parts"]
+                for part in parts:
+                    if "inlineData" in part:
+                        # Return base64 data URI
+                        mime = part["inlineData"]["mimeType"]
+                        b64 = part["inlineData"]["data"]
+                        return f"data:{mime};base64,{b64}"
+                    if "fileData" in part:
+                        return part["fileData"]["uri"]
+                raise ValueError("No image data in response")
             except Exception as e:
                 logger.error(f"Gemini image generation failed: {e}")
                 raise
@@ -120,3 +132,4 @@ class GeminiProvider(LLMProvider):
         
     async def check_video_status(self, job_id: str) -> dict:
         return {"status": "completed", "progress": 100, "url": "https://www.w3schools.com/html/mov_bbb.mp4"}
+

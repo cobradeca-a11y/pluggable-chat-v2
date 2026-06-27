@@ -63,7 +63,7 @@ Notes: Para testes, simula respostas determinísticas
 ### Claude 3.5 Sonnet (Anthropic)
 ```
 Provider Name: claude
-Status: 🔲 A Implementar
+Status: ✅ Implementado
 Pricing: 💵 Pago (por token)
 API Key Env: CLAUDE_API_KEY
 Model Env: CLAUDE_MODEL (default: claude-3-5-sonnet-20241022)
@@ -82,7 +82,7 @@ Notes: Suporta image input via base64
 ### GPT-4o (OpenAI)
 ```
 Provider Name: gpt4o
-Status: 🔲 A Implementar
+Status: ✅ Implementado
 Pricing: 💵 Pago (por token)
 API Key Env: OPENAI_API_KEY
 Model Env: OPENAI_MODEL (default: gpt-4o)

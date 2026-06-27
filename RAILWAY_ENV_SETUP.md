@@ -33,11 +33,15 @@ Insira as seguintes variáveis com seus respectivos valores (ajuste as chaves re
 
 ```env
 LLM_PROVIDER=openrouter
+OPENROUTER_MODEL=openrouter/auto:free
 OLLAMA_BASE_URL=http://localhost:11434
 OLLAMA_MODEL=llama3.2
 CLAUDE_API_KEY=sk-ant-xxxxx
+CLAUDE_MODEL=claude-3-5-sonnet-20241022
 OPENAI_API_KEY=sk-xxxxx
+OPENAI_MODEL=gpt-4o
 GOOGLE_API_KEY=AIzaSy...
+GOOGLE_MODEL=gemini-1.5-pro
 RUNWAY_API_KEY=sua_chave
 SUNO_API_KEY=sua_chave
 MIDJOURNEY_API_KEY=sua_chave

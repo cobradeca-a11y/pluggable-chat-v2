@@ -11,7 +11,7 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     content: str
-    type: Literal["text", "image_url", "image_base64", "video_url"] = "text"
+    type: Literal["text", "image_url", "image_base64", "video_url", "audio_url"] = "text"
 
 class ImageRequest(BaseModel):
     prompt: str

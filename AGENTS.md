@@ -49,13 +49,17 @@ pluggable-chat/
 
 │   ├── plugins/
 
-│   │   ├── providers/               ← um arquivo = um provedor de LLM
+│   │   ├── providers/               ← um arquivo = um provedor de LLM (13 providers)
 
-│   │   │   ├── openrouter.py        ← OpenRouter (padrão em produção)
+│   │   │   ├── openrouter.py, ollama.py, mock.py
 
-│   │   │   ├── ollama.py            ← Ollama (local, sem API key)
+│   │   │   ├── claude.py, gpt4o.py, gemini.py
 
-│   │   │   └── mock.py              ← Mock determinístico para testes
+│   │   │   ├── dalle3.py, flux.py, midjourney.py
+
+│   │   │   ├── sora.py, runway.py, kling.py
+
+│   │   │   └── suno.py              ← ver tabela "Provedores disponíveis"
 
 │   │   ├── middleware/              ← um arquivo = um middleware
 
@@ -245,11 +249,20 @@ def setup(app: FastAPI) -> None:
 
 | Variável | Padrão | Descrição |
 |---|---|---|
-| `LLM_PROVIDER` | `mock` | Provedor ativo. Opções: `openrouter`, `ollama`, `mock` |
+| `LLM_PROVIDER` | `mock` | Provedor ativo. Qualquer ID da tabela "Provedores disponíveis" |
 | `OPENROUTER_API_KEY` | — | Obrigatório se `LLM_PROVIDER=openrouter` |
 | `OPENROUTER_MODEL` | `openrouter/auto:free` | Modelo do OpenRouter |
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | URL do Ollama local |
 | `OLLAMA_MODEL` | `llama3.2` | Modelo do Ollama |
+| `CLAUDE_API_KEY` | — | Obrigatório se `LLM_PROVIDER=claude` |
+| `CLAUDE_MODEL` | `claude-3-5-sonnet-20241022` | Modelo da Anthropic |
+| `OPENAI_API_KEY` | — | Obrigatório se `LLM_PROVIDER=gpt4o`, `dalle3` ou `sora` |
+| `OPENAI_MODEL` | `gpt-4o` | Modelo da OpenAI |
+| `GOOGLE_API_KEY` | — | Obrigatório se `LLM_PROVIDER=gemini` |
+| `GOOGLE_MODEL` | `gemini-1.5-pro` | Modelo do Google Gemini |
+| `RUNWAY_API_KEY` | — | Obrigatório se `LLM_PROVIDER=runway` |
+| `SUNO_API_KEY` | — | Obrigatório se `LLM_PROVIDER=suno` |
+| `MIDJOURNEY_API_KEY` | — | Obrigatório se `LLM_PROVIDER=midjourney` |
 | `ALLOWED_ORIGIN` | `http://localhost:3000` | Origem CORS do frontend — em produção: `https://pluggable-chat-v2.vercel.app` |
 | `ACTIVE_MIDDLEWARE` | `rate_limit,request_logger` | Middleware ativos (separados por vírgula) |
 | `RATE_LIMIT_RPM` | `30` | Requisições por minuto por IP |
