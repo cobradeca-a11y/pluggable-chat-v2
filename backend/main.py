@@ -1,5 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+import httpx
 from core.loader import load_plugins
 from core.registry import get_all_providers, get_all_middlewares
 from app.config import settings
@@ -70,3 +71,62 @@ async def list_plugins() -> dict:
         "providers": provider_list,
         "active_provider": settings.LLM_PROVIDER
     }
+
+@app.get("/api/plugins/{provider}/models")
+async def get_provider_models(provider: str) -> dict:
+    """
+    Retorna modelos disponíveis para cada provider.
+    
+    Casos:
+    - ollama: REQUEST dinâmico a OllamaFreeAPI ou OLLAMA_BASE_URL
+    - claude, gpt4o, gemini, etc: Lista hardcoded
+    """
+    
+    # HARDCODED (todos os providers menos Ollama)
+    PROVIDER_MODELS = {
+        "claude": ["claude-3-5-sonnet-20241022", "claude-3-opus-20250219", "claude-3-haiku-20240307"],
+        "gpt4o": ["gpt-4o", "gpt-4o-mini"],
+        "gemini": ["gemini-1.5-pro", "gemini-1.5-flash"],
+        "openrouter": ["openrouter/auto:free", "meta-llama/llama-2-7b"],
+        "dalle3": ["dall-e-3"],
+        "flux": ["flux.1"],
+        "sora": ["sora"],
+        "runway": ["runway-gen-3"],
+        "midjourney": ["midjourney"],
+        "suno": ["suno"],
+        "mock": ["mock"],
+    }
+    
+    # OLLAMA - REQUEST DINÂMICO
+    if provider == "ollama":
+        try:
+            # Tentar OllamaFreeAPI primeiro
+            async with httpx.AsyncClient() as client:
+                res = await client.get("https://api.ollamafreapi.com/api/tags", timeout=5)
+                if res.status_code == 200:
+                    data = res.json()
+                    models = [m["name"] for m in data.get("models", [])]
+                    return {"models": models}
+        except:
+            pass
+        
+        # Fallback: tentar OLLAMA_BASE_URL local
+        try:
+            async with httpx.AsyncClient() as client:
+                res = await client.get(f"{settings.OLLAMA_BASE_URL}/api/tags", timeout=5)
+                if res.status_code == 200:
+                    data = res.json()
+                    models = [m["name"] for m in data.get("models", [])]
+                    return {"models": models}
+        except:
+            pass
+        
+        # Fallback final: lista padrão
+        return {"models": ["llama3.2", "deepseek-r1:latest", "mistral:latest"]}
+    
+    # Providers conhecidos
+    if provider in PROVIDER_MODELS:
+        return {"models": PROVIDER_MODELS[provider]}
+    
+    # Desconhecido
+    return {"models": [], "error": f"Provider {provider} não encontrado"}

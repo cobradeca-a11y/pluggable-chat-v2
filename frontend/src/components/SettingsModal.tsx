@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ProviderSettings } from '../lib/types';
+import { useAvailableModels } from '../hooks/useAvailableModels';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -11,6 +12,7 @@ interface SettingsModalProps {
 export function SettingsModal({ isOpen, onClose, settings, onSave }: SettingsModalProps) {
   const [localSettings, setLocalSettings] = useState<ProviderSettings>(settings);
   const [providers, setProviders] = useState<any[]>([]);
+  const { models: availableModels, loading: modelsLoading } = useAvailableModels(localSettings.provider);
 
   useEffect(() => {
     if (isOpen) {
@@ -124,13 +126,20 @@ export function SettingsModal({ isOpen, onClose, settings, onSave }: SettingsMod
 
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300 transition-colors duration-300">Model</label>
-            <input 
-              type="text"
+            <select 
               value={localSettings.model}
               onChange={(e) => setLocalSettings({...localSettings, model: e.target.value})}
-              placeholder="ex: openrouter/auto:free"
-              className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors duration-300"
-            />
+              disabled={modelsLoading || availableModels.length === 0}
+              className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors duration-300"
+            >
+              {availableModels.length > 0 ? (
+                availableModels.map(m => (
+                  <option key={m} value={m}>{m}</option>
+                ))
+              ) : (
+                <option disabled>{modelsLoading ? "Carregando modelos..." : "Nenhum modelo disponível"}</option>
+              )}
+            </select>
           </div>
 
           {localSettings.provider === 'openrouter' && (

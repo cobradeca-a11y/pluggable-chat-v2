@@ -28,105 +28,88 @@ Stack:
 pluggable-chat/
 
 ├── AGENTS.md                        ← VOCÊ ESTÁ AQUI
+├── AGENT_HANDBOOK.md                ← guia operacional para agentes
+├── AGENT_INSTRUCTION_implement_provider.md
+├── PROVIDERS_CATALOG.md             ← catálogo detalhado de providers
+├── LOCAL_OLLAMA_SETUP.md            ← setup Ollama local
+├── OLLAMA_MODELS.md                 ← modelos disponíveis no Ollama
+├── RAILWAY_ENV_SETUP.md             ← setup Railway produção
+├── ROADMAP_PROVIDERS.md             ← roadmap de novos providers
+├── PLAN_S2_IMPLEMENTATION.md        ← plano de implementação S2 multimodal
+├── SPEC_providers_claude_gpt4o.md   ← spec dos providers Claude e GPT-4o
+├── DOCUMENTATION_AUDIT.md           ← auditoria de documentação
+├── SETUP_VALIDATION_REPORT.md       ← relatório de validação de setup
+├── TASK_*.md                        ← tarefas operacionais (001–002)
+├── STATUS_CARTILHA_*.md             ← relatórios de status (001–017)
 
 ├── backend/
 
 │   ├── .env.example                 ← variáveis de ambiente
-
 │   ├── requirements.txt
-
 │   ├── railway.toml                 ← config de deploy Railway
-
-│   ├── main.py                      ← entrypoint uvicorn + CORS
+│   ├── Procfile                     ← entrypoint Railway (web: uvicorn)
+│   ├── main.py                      ← entrypoint uvicorn + CORS + plugin discovery
 
 │   ├── core/
-
 │   │   ├── protocol.py              ← contrato LLMProvider (Protocol) — IMUTÁVEL
-
 │   │   ├── registry.py              ← registry central de plugins — IMUTÁVEL
-
 │   │   └── loader.py                ← auto-discovery de plugins — IMUTÁVEL
 
 │   ├── plugins/
-
 │   │   ├── providers/               ← um arquivo = um provedor de LLM (13 providers)
-
 │   │   │   ├── openrouter.py, ollama.py, mock.py
-
 │   │   │   ├── claude.py, gpt4o.py, gemini.py
-
 │   │   │   ├── dalle3.py, flux.py, midjourney.py
-
 │   │   │   ├── sora.py, runway.py, kling.py
-
 │   │   │   └── suno.py              ← ver tabela "Provedores disponíveis"
-
 │   │   ├── middleware/              ← um arquivo = um middleware
-
 │   │   │   ├── rate_limit.py        ← limite de requisições por IP
-
 │   │   │   └── request_logger.py    ← log estruturado de cada request
-
 │   │   └── tools/                   ← ferramentas futuras da IA
-
 │   │       └── .gitkeep
 
-│   └── app/
+│   ├── app/
+│   │   ├── config.py                ← settings via pydantic-settings
+│   │   ├── schemas/
+│   │   │   └── chat.py              ← ChatRequest, ChatResponse, ImageRequest
+│   │   └── routers/
+│   │       └── chat.py              ← todos os endpoints de chat e geração
 
-│       ├── config.py                ← settings via pydantic-settings
-
-│       ├── schemas/
-
-│       │   └── chat.py              ← ChatRequest, ChatResponse, Message
-
-│       └── routers/
-
-│           └── chat.py              ← POST /api/chat, POST /api/chat/stream
+│   └── tests/
+│       ├── test_setup.py            ← smoke test de imports
+│       └── test_e2e.py              ← testes E2E (plugins, providers, chat, geração)
 
 └── frontend/
 
     ├── .env.local.example
-
     ├── package.json
 
     ├── src/
-
     │   ├── app/
-
     │   │   ├── layout.tsx
-
     │   │   ├── page.tsx             ← UI principal + layout com sidebar
-
     │   │   └── globals.css
 
     │   ├── components/
-
     │   │   ├── Sidebar.tsx          ← lista de conversas com busca, rename, export, delete
-
     │   │   ├── ChatInput.tsx
-
-    │   │   ├── MessageBubble.tsx
-
+    │   │   ├── MessageBubble.tsx     ← bolha de mensagem (texto + markdown)
+    │   │   ├── MessageBubbleImage.tsx ← bolha para imagens geradas (DALL-E, Flux, Midjourney)
+    │   │   ├── MessageBubbleVideo.tsx ← bolha para vídeos gerados (Sora, Runway, Kling)
     │   │   ├── SettingsModal.tsx
-
     │   │   ├── Toast.tsx
-
     │   │   └── TypingIndicator.tsx
 
     │   ├── hooks/
-
     │   │   ├── useChat.ts           ← estado + streaming + chamada à API + memória (MEMORY_WINDOW=20)
-
     │   │   ├── useConversations.ts  ← gerencia histórico no localStorage
-
     │   │   ├── useActiveModel.ts    ← provider/model ativo + supported_attachments
-
+    │   │   ├── useVideoGeneration.ts ← polling de status para geração de vídeo
+    │   │   ├── useAvailableModels.ts ← busca modelos disponíveis do provedor ativo
     │   │   └── useTheme.ts          ← tema claro/escuro
 
     │   └── lib/
-
     │       ├── types.ts             ← tipos TypeScript (Message, Attachment, Conversation...)
-
     │       └── export.ts            ← exportAsMarkdown, exportAsJson
 
     └── ...config files
@@ -163,13 +146,18 @@ npm run dev                      # http://localhost:3000
 # Backend health check:
 curl http://localhost:8000/api/health
 
-# Listar plugins carregados:
+# Listar plugins carregados (retorna capabilities: can_text, can_image, can_video, can_audio):
 curl http://localhost:8000/api/plugins
 
 # Testar chat (sem frontend):
 curl -X POST http://localhost:8000/api/chat \
   -H "Content-Type: application/json" \
   -d '{"messages": [{"role": "user", "content": "Olá!"}]}'
+
+# Testar geração de imagem:
+curl -X POST http://localhost:8000/api/generate/image \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "um gato astronauta", "provider": "flux"}'
 ```
 
 ---
@@ -273,7 +261,7 @@ def setup(app: FastAPI) -> None:
 
 | Variável | Padrão | Descrição |
 |---|---|---|
-| `NEXT_PUBLIC_API_URL` | `http://localhost:8000` | URL do backend FastAPI |
+| `NEXT_PUBLIC_API_URL` | `https://pluggable-chat-v2-production.up.railway.app` | URL do backend FastAPI. Fallback hardcoded aponta para produção para que o deploy na Vercel funcione sem `.env.local`. Em dev local, defina `http://localhost:8000` no `.env.local`. |
 
 ---
 
@@ -281,7 +269,10 @@ def setup(app: FastAPI) -> None:
 
 1. **`core/protocol.py` é imutável.** Nunca modifique a assinatura de `LLMProvider`.
    Adicionar métodos opcionais é permitido com `NotImplementedError` como default.
-   *Novos métodos registrados (S3):*
+   *Métodos opcionais registrados no Protocol:*
+   - `generate_image(prompt: str) -> str` (retorna URL da imagem)
+   - `generate_video(prompt: str) -> dict` (retorna `job_id`)
+   - `check_video_status(job_id: str) -> dict` (retorna `status`, `progress`, `url`)
    - `generate_audio(prompt: str) -> dict` (retorna `job_id`)
    - `check_audio_status(job_id: str) -> dict` (retorna `status`, `url`)
 
@@ -294,10 +285,12 @@ def setup(app: FastAPI) -> None:
    para que o projeto rode em testes sem nenhuma configuração.
 
 5. **Todo plugin deve implementar `health() -> bool`.** O endpoint `/api/plugins`
-   mostra o status de cada plugin em tempo real.
+   mostra capabilities detalhadas (`can_text`, `can_image`, `can_video`, `can_audio`).
 
-6. **`NEXT_PUBLIC_API_URL` nunca deve ser hardcoded no código.**
-   Toda referência à URL do backend usa `process.env.NEXT_PUBLIC_API_URL`.
+6. **`NEXT_PUBLIC_API_URL` deve usar `process.env.NEXT_PUBLIC_API_URL` com fallback para produção.**
+   O fallback hardcoded `https://pluggable-chat-v2-production.up.railway.app` existe em 4 arquivos
+   (`useChat.ts`, `useVideoGeneration.ts`, `useActiveModel.ts`, `SettingsModal.tsx`) para que o
+   deploy na Vercel funcione sem configuração extra. Em dev local, use `.env.local`.
 
 ---
 
@@ -322,6 +315,25 @@ cd frontend && npx tsc --noEmit
 
 ---
 
+## Endpoints da API
+
+| Método | Rota | Descrição |
+|---|---|---|
+| `GET` | `/api/health` | Health check do backend |
+| `GET` | `/api/plugins` | Lista providers com capabilities (`can_text/image/video/audio`) |
+| `GET` | `/api/plugins/{provider}/models` | Lista modelos suportados por um provedor específico |
+| `POST` | `/api/chat` | Chat síncrono (retorna `ChatResponse`) |
+| `POST` | `/api/chat/stream` | Chat via SSE (streaming) |
+| `POST` | `/api/generate/image` | Geração de imagem (retorna URL) |
+| `POST` | `/api/generate/video` | Inicia geração de vídeo (retorna `job_id`) |
+| `GET` | `/api/generate/video/{job_id}` | Polling do status do vídeo |
+| `POST` | `/api/generate/audio` | Inicia geração de áudio (retorna `job_id`) |
+| `GET` | `/api/generate/audio/{job_id}` | Polling do status do áudio |
+
+Schemas principais: `ChatRequest`, `ChatResponse`, `ImageRequest` (ver `app/schemas/chat.py`).
+
+---
+
 ## Decisões de arquitetura registradas
 
 | Data | Decisão | Motivo |
@@ -342,6 +354,10 @@ cd frontend && npx tsc --noEmit
 | 2026-06 | Título da conversa gerado da primeira mensagem do usuário (máx 40 chars) | Sem input manual; rename manual disponível via duplo clique na sidebar |
 | 2026-06 | Suporte a áudio como capability primeira classe | Suno requer `generate_audio` + `check_audio_status` |
 | 2026-06 | 6 novos provedores (Gemini, DALL-E, Sora, Runway, Midjourney, Suno) | Expandir multimodalidade |
+| 2026-06 | Componentes separados por tipo de mídia (MessageBubbleImage/Video) | Isolamento de lógica de renderização por modalidade |
+| 2026-06 | Polling client-side com `useVideoGeneration` hook | Timeout 10min, intervalo 3s, máx 200 polls |
+| 2026-06 | `ImageRequest` schema separado de `ChatRequest` | Endpoints de geração multimodal usam prompt direto, sem histórico de mensagens |
+| 2026-06 | Provider/model/api_key overrides via request body | Frontend pode selecionar provider dinamicamente sem reiniciar backend |
 
 ---
 
@@ -383,18 +399,26 @@ cd frontend && npx tsc --noEmit
 | Modal de configurações | ✅ Implementado | — |
 | Toast de notificações | ✅ Implementado | — |
 | Auto-scroll inteligente | ✅ Implementado | — |
-| Sidebar com histórico | ✅ Implementado | `SPEC_sidebar_conversas.md` |
+| Sidebar com histórico | ✅ Implementado | — |
 | Indicador de modelo no rodapé | ✅ Implementado | — |
-| Memória de conversas | ✅ Implementado | `SPEC_sprint_S1.md` |
-| Upload de imagens | ✅ Implementado | `SPEC_sprint_S1.md` |
-| Renomear conversa | ✅ Implementado | `SPEC_sprint_S1.md` |
-| Exportar conversa | ✅ Implementado | `SPEC_sprint_S1.md` |
-| Busca no histórico | ✅ Implementado | `SPEC_sprint_S1.md` |
-| Atalhos de teclado | ✅ Implementado | `SPEC_sprint_S1.md` |
-| Suporte a Imagem (Flux mock) | ✅ Implementado | `SPEC_sprint_S2_multimodal.md` |
-| Suporte a Vídeo (Kling mock) | ✅ Implementado | `SPEC_sprint_S2_multimodal.md` |
+| Memória de conversas | ✅ Implementado | — |
+| Upload de imagens | ✅ Implementado | — |
+| Renomear conversa | ✅ Implementado | — |
+| Exportar conversa | ✅ Implementado | — |
+| Busca no histórico | ✅ Implementado | — |
+| Atalhos de teclado | ✅ Implementado | — |
+| Suporte a Imagem (Flux mock) | ✅ Implementado | — |
+| Suporte a Vídeo (Kling mock) | ✅ Implementado | — |
+| Bolha dedicada para imagens | ✅ Implementado | `MessageBubbleImage.tsx` |
+| Bolha dedicada para vídeos | ✅ Implementado | `MessageBubbleVideo.tsx` |
+| Polling de vídeo com progresso | ✅ Implementado | `useVideoGeneration.ts` |
+| Markdown nas respostas | ✅ Implementado | `react-markdown` + `remark-gfm` |
+| Seleção de provider/modelo dinâmica | ✅ Implementado | `SettingsModal.tsx` + OllamaFreeAPI |
+| Geração de imagem (DALL-E 3) | ✅ Implementado | `PLAN_S2_IMPLEMENTATION.md` |
+| Geração de vídeo (Sora, Runway) | ✅ Implementado | `PLAN_S2_IMPLEMENTATION.md` |
+| Geração de áudio (Suno) | ✅ Implementado | `PLAN_S2_IMPLEMENTATION.md` |
 
-Status: **S3 COMPLETA (Multimodalidade + 6 Providers)** | Backlog restante bloqueado
+Status: **S3 COMPLETA (Multimodalidade + 13 Providers)** | Backlog restante bloqueado
 
 ---
 
