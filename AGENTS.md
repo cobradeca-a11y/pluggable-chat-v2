@@ -413,10 +413,10 @@ Schemas principais: `ChatRequest`, `ChatResponse`, `ImageRequest` (ver `app/sche
 | Bolha dedicada para vídeos | ✅ Implementado | `MessageBubbleVideo.tsx` |
 | Polling de vídeo com progresso | ✅ Implementado | `useVideoGeneration.ts` |
 | Markdown nas respostas | ✅ Implementado | `react-markdown` + `remark-gfm` |
-| Seleção de provider/modelo dinâmica | ✅ Implementado | `SettingsModal.tsx` + OllamaFreeAPI |
-| Geração de imagem (DALL-E 3) | ✅ Implementado | `PLAN_S2_IMPLEMENTATION.md` |
-| Geração de vídeo (Sora, Runway) | ✅ Implementado | `PLAN_S2_IMPLEMENTATION.md` |
-| Geração de áudio (Suno) | ✅ Implementado | `PLAN_S2_IMPLEMENTATION.md` |
+| Seletor dinâmico de modelos | ✅ Implementado | `/api/plugins/{provider}/models` |
+| Geração de imagem (DALL-E 3, Flux, Midjourney) | ✅ Implementado | — |
+| Geração de vídeo (Sora, Runway, Kling) | ✅ Implementado | — |
+| Geração de áudio (Suno) | ✅ Implementado | — |
 
 Status: **S3 COMPLETA (Multimodalidade + 13 Providers)** | Backlog restante bloqueado
 

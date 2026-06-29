@@ -54,6 +54,30 @@ ACTIVE_MIDDLEWARE=rate_limit,request_logger
 
 ---
 
+## Variáveis Multimodal (S3.3-S3.8 — Gemini, DALL-E, Sora, Runway, Suno, Midjourney)
+
+### 1. Google (Gemini — Texto + Imagem + Vídeo)
+- `GOOGLE_API_KEY` = AIzaSy... (ou AQ....)
+- `GOOGLE_MODEL` = gemini-1.5-pro
+
+### 2. OpenAI (GPT-4o, DALL-E 3, Sora)
+- `OPENAI_API_KEY` = sk-proj-...
+- `OPENAI_MODEL` = gpt-4o
+
+### 3. Vídeo Especializado
+- `RUNWAY_API_KEY` = sua_chave_runway
+- `SUNO_API_KEY` = sua_chave_suno
+
+### 4. Imagem (Midjourney via terceiros)
+- `MIDJOURNEY_API_KEY` = sua_chave_midjourney
+
+### Como adicionar no Railway:
+1. Railway → Backend → Variables → Raw Editor
+2. Cole múltiplas linhas: `CHAVE=VALOR`
+3. Salvar (deploy automático)
+
+---
+
 ## 4. Deploy & Validação
 
 ### Como redeployar após mudanças
