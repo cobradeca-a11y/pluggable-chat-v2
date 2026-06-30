@@ -1,4 +1,5 @@
 from typing import AsyncGenerator, Union
+import httpx
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from app.schemas.chat import ChatRequest, ChatResponse, ImageRequest
@@ -7,6 +8,16 @@ from app.config import settings
 from core.protocol import LLMProvider
 
 router = APIRouter()
+
+def _upstream_error(e: httpx.HTTPStatusError) -> HTTPException:
+    try:
+        body = e.response.json()
+    except Exception:
+        body = e.response.text[:300]
+    return HTTPException(
+        status_code=e.response.status_code,
+        detail={"upstream_status": e.response.status_code, "upstream_body": body},
+    )
 
 def _get_active_provider(req: Union[ChatRequest, ImageRequest]) -> LLMProvider:
     provider_name = req.provider or settings.LLM_PROVIDER
@@ -36,6 +47,8 @@ async def chat(request: ChatRequest) -> ChatResponse:
         return ChatResponse(content=content)
     except NotImplementedError:
         raise HTTPException(status_code=501, detail="Provider não suporta geração de texto (complete)")
+    except httpx.HTTPStatusError as e:
+        raise _upstream_error(e)
 
 @router.post("/api/chat/stream")
 async def chat_stream(request: ChatRequest) -> StreamingResponse:
@@ -60,6 +73,8 @@ async def generate_image(request: ImageRequest) -> ChatResponse:
         return ChatResponse(content=content, type="image_url")
     except NotImplementedError:
         raise HTTPException(status_code=501, detail="Provider não suporta geração de imagem")
+    except httpx.HTTPStatusError as e:
+        raise _upstream_error(e)
 
 @router.post("/api/generate/video")
 async def generate_video(request: ImageRequest) -> dict:
@@ -68,6 +83,8 @@ async def generate_video(request: ImageRequest) -> dict:
         return await provider.generate_video(request.prompt)
     except NotImplementedError:
         raise HTTPException(status_code=501, detail="Provider não suporta vídeo")
+    except httpx.HTTPStatusError as e:
+        raise _upstream_error(e)
 
 @router.get("/api/generate/video/{job_id}")
 async def check_video(job_id: str) -> dict:
@@ -86,6 +103,8 @@ async def check_video(job_id: str) -> dict:
         return await provider.check_video_status(job_id)
     except NotImplementedError:
         raise HTTPException(status_code=501, detail="Provider não suporta vídeo")
+    except httpx.HTTPStatusError as e:
+        raise _upstream_error(e)
 
 @router.post("/api/generate/audio")
 async def generate_audio(request: ImageRequest) -> dict:
@@ -94,6 +113,8 @@ async def generate_audio(request: ImageRequest) -> dict:
         return await provider.generate_audio(request.prompt)
     except NotImplementedError:
         raise HTTPException(status_code=501, detail="Provider não suporta áudio")
+    except httpx.HTTPStatusError as e:
+        raise _upstream_error(e)
 
 @router.get("/api/generate/audio/{job_id}")
 async def check_audio(job_id: str) -> dict:
@@ -112,3 +133,5 @@ async def check_audio(job_id: str) -> dict:
         return await provider.check_audio_status(job_id)
     except NotImplementedError:
         raise HTTPException(status_code=501, detail="Provider não suporta áudio")
+    except httpx.HTTPStatusError as e:
+        raise _upstream_error(e)

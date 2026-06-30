@@ -31,6 +31,14 @@ app.include_router(auth_router)
 async def health_check() -> dict[str, str]:
     return {"status": "ok"}
 
+@app.get("/api/version")
+async def version() -> dict[str, str]:
+    import os
+    return {
+        "git_sha": os.environ.get("RAILWAY_GIT_COMMIT_SHA", "unknown")[:7],
+        "deployed_at": os.environ.get("RAILWAY_DEPLOYMENT_ID", "unknown"),
+    }
+
 @app.get("/api/plugins")
 async def list_plugins() -> dict:
     providers = get_all_providers()
