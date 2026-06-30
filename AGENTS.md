@@ -57,11 +57,8 @@ pluggable-chat/
 
 │   ├── plugins/
 │   │   ├── providers/               ← um arquivo = um provedor de LLM (13 providers)
-│   │   │   ├── openrouter.py, ollama.py, mock.py
-│   │   │   ├── claude.py, gpt4o.py, gemini.py
-│   │   │   ├── dalle3.py, flux.py, midjourney.py
-│   │   │   ├── sora.py, runway.py, kling.py
-│   │   │   └── suno.py              ← ver tabela "Provedores disponíveis"
+│   │   │   ├── openrouter.py, ollama.py, ollama_cloud.py, mock.py
+│   │   │   └── claude.py, gpt4o.py, gemini.py
 │   │   ├── middleware/              ← um arquivo = um middleware
 │   │   │   ├── rate_limit.py        ← limite de requisições por IP
 │   │   │   └── request_logger.py    ← log estruturado de cada request
@@ -244,16 +241,16 @@ def setup(app: FastAPI) -> None:
 | `OLLAMA_MODEL` | `llama3.2` | Modelo do Ollama |
 | `CLAUDE_API_KEY` | — | Obrigatório se `LLM_PROVIDER=claude` |
 | `CLAUDE_MODEL` | `claude-3-5-sonnet-20241022` | Modelo da Anthropic |
-| `OPENAI_API_KEY` | — | Obrigatório se `LLM_PROVIDER=gpt4o`, `dalle3` ou `sora` |
+| `OPENAI_API_KEY` | — | Obrigatório se `LLM_PROVIDER=gpt4o` |
 | `OPENAI_MODEL` | `gpt-4o` | Modelo da OpenAI |
 | `GOOGLE_API_KEY` | — | Obrigatório se `LLM_PROVIDER=gemini` |
 | `GOOGLE_MODEL` | `gemini-1.5-pro` | Modelo do Google Gemini |
-| `RUNWAY_API_KEY` | — | Obrigatório se `LLM_PROVIDER=runway` |
-| `SUNO_API_KEY` | — | Obrigatório se `LLM_PROVIDER=suno` |
-| `MIDJOURNEY_API_KEY` | — | Obrigatório se `LLM_PROVIDER=midjourney` |
 | `ALLOWED_ORIGIN` | `http://localhost:3000` | Origem CORS do frontend — em produção: `https://pluggable-chat-v2.vercel.app` |
 | `ACTIVE_MIDDLEWARE` | `rate_limit,request_logger` | Middleware ativos (separados por vírgula) |
-| `RATE_LIMIT_RPM` | `30` | Requisições por minuto por IP |
+| `RATE_LIMIT_RPM` | `100` | Requisições por minuto por IP |
+| `SUPABASE_URL` | — | URL da API do Supabase |
+| `SUPABASE_KEY` | — | Chave anônima do Supabase |
+| `SUPABASE_SERVICE_ROLE_KEY` | — | Chave de serviço do Supabase |
 
 ---
 
@@ -320,6 +317,8 @@ cd frontend && npx tsc --noEmit
 | Método | Rota | Descrição |
 |---|---|---|
 | `GET` | `/api/health` | Health check do backend |
+| `POST` | `/api/auth/send-link` | Envia o Magic Link para login |
+| `POST` | `/api/auth/verify` | Verifica token e retorna sessão |
 | `GET` | `/api/plugins` | Lista providers com capabilities (`can_text/image/video/audio`) |
 | `GET` | `/api/plugins/{provider}/models` | Lista modelos suportados por um provedor específico |
 | `POST` | `/api/chat` | Chat síncrono (retorna `ChatResponse`) |
@@ -367,13 +366,11 @@ Schemas principais: `ChatRequest`, `ChatResponse`, `ImageRequest` (ver `app/sche
 |---|---|---|---|
 | `openrouter` | `plugins/providers/openrouter.py` | `OPENROUTER_API_KEY` | Sim (tier free) |
 | `ollama` | `plugins/providers/ollama.py` | Ollama rodando localmente | Sim (100%) |
+| `ollama-cloud`| `plugins/providers/ollama_cloud.py` | API Cloud Oficial | Sim |
 | `mock` | `plugins/providers/mock.py` | Nada | Sim |
 | `claude` | `plugins/providers/claude.py` | `CLAUDE_API_KEY` | Não |
 | `gpt4o` | `plugins/providers/gpt4o.py` | `OPENAI_API_KEY` | Não |
 | `gemini` | `plugins/providers/gemini.py` | `GOOGLE_API_KEY` | Sim (tier free) |
-| `dalle3` | `plugins/providers/dalle3.py` | `OPENAI_API_KEY` | Não |
-| `sora` | `plugins/providers/sora.py` | `OPENAI_API_KEY` | Não |
-| `runway` | `plugins/providers/runway.py` | `RUNWAY_API_KEY` | Não |
 
 ---
 
@@ -410,11 +407,13 @@ Schemas principais: `ChatRequest`, `ChatResponse`, `ImageRequest` (ver `app/sche
 | Polling de vídeo com progresso | ✅ Implementado | `useVideoGeneration.ts` |
 | Markdown nas respostas | ✅ Implementado | `react-markdown` + `remark-gfm` |
 | Seletor dinâmico de modelos | ✅ Implementado | `/api/plugins/{provider}/models` |
-| Geração de imagem (DALL-E 3, Flux, Midjourney) | ✅ Implementado | — |
-| Geração de vídeo (Sora, Runway, Kling) | ✅ Implementado | — |
-| Geração de áudio (Suno) | ✅ Implementado | — |
+| Geração de imagem (DALL-E 3, Flux, Midjourney) | ✅ Expandido | Integrado via OpenRouter |
+| Geração de vídeo (Sora, Runway, Kling) | ✅ Expandido | Integrado via OpenRouter |
+| Geração de áudio (Suno) | ✅ Expandido | Integrado via OpenRouter |
+| Autenticação (Magic Link / Supabase) | ✅ Implementado | `useAuth.ts` |
+| Histórico em Nuvem (Supabase) | ✅ Implementado | `useConversations.ts` |
 
-Status: **S3 COMPLETA (Multimodalidade + 13 Providers)** | Backlog restante bloqueado
+Status: **S4 COMPLETA (Autenticação + Cloud Sync)** | Backlog restante bloqueado
 
 ---
 
@@ -431,13 +430,11 @@ sem instrução explícita do dono do projeto**. Registradas aqui para não se p
 - **Internacionalização** — suporte a múltiplos idiomas na UI
 
 ### Backend
-- **Autenticação** — login simples (magic link ou OAuth) para separar histórico por usuário
-- **Histórico no servidor** — mover conversas do localStorage para banco de dados (Supabase/PostgreSQL)
 - **Provider: Azure OpenAI** — plugin `azure_openai.py`
 - **Ferramenta: web search** — plugin em `tools/` que injeta resultados de busca no contexto
 - **Ferramenta: RAG simples** — upload de documentos, embeddings, busca semântica antes de responder
 - **Streaming com cancelamento real** — backend cancela a requisição ao provider quando o usuário clica "parar"
-- **Rate limit por usuário** — quando autenticação estiver implementada
+- **Rate limit por usuário** — vinculado ao user_id do Supabase
 - **Logs estruturados** — integração com Sentry ou Datadog
 
 ### Infraestrutura
