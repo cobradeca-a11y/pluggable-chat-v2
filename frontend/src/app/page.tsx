@@ -11,12 +11,22 @@ import { Sidebar } from '../components/Sidebar';
 import { useTheme } from '../hooks/useTheme';
 import { useActiveModel } from '../hooks/useActiveModel';
 import { Attachment } from '../lib/types';
+import { useAuth } from '../hooks/useAuth';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
   const { theme, toggleTheme } = useTheme();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
+  const { isAuthenticated, logout } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isAuthenticated === false) {
+      router.push('/login');
+    }
+  }, [isAuthenticated, router]);
 
   const {
     messages, input, setInput, loading, sendMessage,
@@ -98,6 +108,10 @@ export default function Home() {
     }
     setPendingAttachment(att);
   };
+
+  if (isAuthenticated === null || isAuthenticated === false) {
+    return <div style={{ height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: theme === 'dark' ? '#09090b' : '#fafafa', color: theme === 'dark' ? '#f4f4f5' : '#18181b' }}>Carregando...</div>;
+  }
 
   return (
     <div style={{ display: 'flex', height: '100vh', width: '100%', overflow: 'hidden', backgroundColor: theme === 'dark' ? '#09090b' : '#fafafa' }}>
@@ -206,6 +220,17 @@ export default function Home() {
               }}
               title="Tema"
             >{theme === 'dark' ? '☀' : '🌙'}</button>
+
+            <button
+              onClick={logout}
+              style={{
+                padding: '6px 10px', borderRadius: 8, border: 'none',
+                backgroundColor: theme === 'dark' ? '#27272a' : '#f4f4f5',
+                color: theme === 'dark' ? '#a1a1aa' : '#52525b',
+                cursor: 'pointer', fontSize: 14
+              }}
+              title="Sair"
+            >🚪</button>
 
             <div style={{ display: isDesktop ? 'flex' : 'none', alignItems: 'center', gap: 6, padding: '4px 8px', borderRadius: 20, backgroundColor: theme === 'dark' ? '#27272a' : '#f4f4f5' }}>
               <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#10b981', display: 'inline-block' }}></span>

@@ -5,55 +5,108 @@ const STORE_KEY = "pluggable_chat_conversations";
 const MAX_CONVERSATIONS = 50;
 const TTL_MS = 90 * 24 * 60 * 60 * 1000; // 90 dias
 
+const SUPABASE_URL = "https://eyxlerizjufmttxaahto.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV5eGxlcml6anVmbXR0eGFhaHRvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3NzA0NTYsImV4cCI6MjA5ODM0NjQ1Nn0.m7mCix-R84q7GuT6h3tdZvxD6cKJLDS4Rhv6qTaJ6-s";
+
 export function useConversations() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Carregar do localStorage na inicialização
+  // Carregar dados (Supabase ou LocalStorage)
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored) as ConversationsStore;
-        
-        const now = Date.now();
-        // Filtra conversas expiradas e sem mensagens do usuário
-        const validConversations = parsed.conversations.filter(c => {
-          const hasUserMessage = c.messages.some(m => m.role === 'user');
-          const isNotExpired = now - c.updatedAt <= TTL_MS;
-          return hasUserMessage && isNotExpired;
-        });
+    const loadData = async () => {
+      const token = localStorage.getItem('pluggable_auth_token');
+      const userId = localStorage.getItem('pluggable_user_id');
 
-        // Ordena por data de atualização (descendente) e aplica limite
-        validConversations.sort((a, b) => b.updatedAt - a.updatedAt);
-        const limitedConversations = validConversations.slice(0, MAX_CONVERSATIONS);
-
-        setConversations(limitedConversations);
-        setActiveId(parsed.activeId || null);
+      if (token && userId) {
+        // Autenticado: buscar do Supabase
+        try {
+          const res = await fetch(`${SUPABASE_URL}/rest/v1/conversations?user_id=eq.${userId}&select=*`, {
+            headers: {
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            // Converter do formato do BD para Conversation[]
+            const dbConversations = data.map((d: any) => ({
+              id: d.id,
+              title: d.title,
+              messages: d.messages,
+              createdAt: new Date(d.created_at).getTime(),
+              updatedAt: new Date(d.created_at).getTime(),
+              provider: d.messages[0]?.provider || 'mock',
+              model: d.messages[0]?.model || 'mock'
+            }));
+            
+            dbConversations.sort((a: Conversation, b: Conversation) => b.updatedAt - a.updatedAt);
+            setConversations(dbConversations);
+            
+            // Try to set active ID from local storage so we remember where we were
+            const stored = localStorage.getItem(STORE_KEY);
+            if (stored) {
+              const parsed = JSON.parse(stored) as ConversationsStore;
+              setActiveId(parsed.activeId || null);
+            }
+            
+            setIsInitialized(true);
+            return;
+          }
+        } catch (e) {
+          console.error("Failed to load from Supabase", e);
+        }
       }
-    } catch (e) {
-      console.error("Failed to parse conversations history", e);
-    } finally {
-      setIsInitialized(true);
-    }
+
+      // Fallback: carregar do localStorage
+      try {
+        const stored = localStorage.getItem(STORE_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored) as ConversationsStore;
+          
+          const now = Date.now();
+          const validConversations = parsed.conversations.filter(c => {
+            const hasUserMessage = c.messages.some(m => m.role === 'user');
+            const isNotExpired = now - c.updatedAt <= TTL_MS;
+            return hasUserMessage && isNotExpired;
+          });
+
+          validConversations.sort((a, b) => b.updatedAt - a.updatedAt);
+          setConversations(validConversations.slice(0, MAX_CONVERSATIONS));
+          setActiveId(parsed.activeId || null);
+        }
+      } catch (e) {
+        console.error("Failed to parse conversations history", e);
+      } finally {
+        setIsInitialized(true);
+      }
+    };
+    
+    loadData();
   }, []);
 
-  // Salvar no localStorage sempre que houver alteração
+  // Salvar no localStorage (activeId) e gerenciar debounce para Supabase/LocalStorage
   useEffect(() => {
     if (!isInitialized) return;
     
-    // Só salva conversas com mensagens de usuário
-    const valid = conversations.filter(c => c.messages.some(m => m.role === 'user'));
+    const token = localStorage.getItem('pluggable_auth_token');
+    const userId = localStorage.getItem('pluggable_user_id');
     
-    if (valid.length > 0) {
-      localStorage.setItem(STORE_KEY, JSON.stringify({
-        conversations: valid,
-        activeId
-      }));
-    } else {
-      localStorage.removeItem(STORE_KEY);
-    }
+    const timer = setTimeout(() => {
+      const valid = conversations.filter(c => c.messages.some(m => m.role === 'user'));
+      
+      // Save local active ID and offline fallback
+      if (valid.length > 0) {
+        localStorage.setItem(STORE_KEY, JSON.stringify({
+          conversations: valid,
+          activeId
+        }));
+      } else {
+        localStorage.removeItem(STORE_KEY);
+      }
+    }, 500); // debounce
+    return () => clearTimeout(timer);
   }, [conversations, activeId, isInitialized]);
 
   const activeConversation = conversations.find(c => c.id === activeId) || null;
@@ -75,6 +128,34 @@ export function useConversations() {
     return clean.length > 40 ? clean.slice(0, 40) + '…' : clean;
   }, []);
 
+  const syncToSupabase = async (conversation: Conversation) => {
+    const token = localStorage.getItem('pluggable_auth_token');
+    const userId = localStorage.getItem('pluggable_user_id');
+    
+    if (token && userId) {
+      try {
+        await fetch(`${SUPABASE_URL}/rest/v1/conversations`, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'resolution=merge-duplicates'
+          },
+          body: JSON.stringify({
+            id: conversation.id,
+            user_id: userId,
+            title: conversation.title,
+            messages: conversation.messages,
+            created_at: new Date(conversation.createdAt).toISOString()
+          })
+        });
+      } catch (e) {
+        console.error("Failed to sync to Supabase", e);
+      }
+    }
+  };
+
   const saveConversation = useCallback((id: string, messages: Message[], settings: ProviderSettings) => {
     setConversations(prev => {
       const existingIdx = prev.findIndex(c => c.id === id);
@@ -82,22 +163,19 @@ export function useConversations() {
       
       const userMessages = messages.filter(m => m.role === 'user');
       if (userMessages.length === 0) {
-          return prev; // Ignora se não há mensagem de usuário
+          return prev;
       }
 
       let title = "Nova Conversa";
+      let targetConversation: Conversation;
       
       if (existingIdx >= 0) {
-        // Atualiza conversa existente
         const existing = prev[existingIdx];
-        
-        // Só tenta gerar o título se o anterior não tinha, ou se era padrão
-        // (Isso impede de regravar títulos toda vez, embora nesse design não dê pra editar na mão)
         title = existing.title && existing.title !== "Nova Conversa" 
                   ? existing.title 
                   : generateTitle(userMessages[0].content);
         
-        const updatedConversation: Conversation = {
+        targetConversation = {
           ...existing,
           title,
           updatedAt: now,
@@ -107,13 +185,16 @@ export function useConversations() {
         };
         
         const updatedList = [...prev];
-        updatedList[existingIdx] = updatedConversation;
+        updatedList[existingIdx] = targetConversation;
         updatedList.sort((a, b) => b.updatedAt - a.updatedAt);
+        
+        // Async sync
+        syncToSupabase(targetConversation);
+        
         return updatedList.slice(0, MAX_CONVERSATIONS);
       } else {
-        // Cria nova conversa
         title = generateTitle(userMessages[0].content);
-        const newConversation: Conversation = {
+        targetConversation = {
           id,
           title,
           createdAt: now,
@@ -123,8 +204,12 @@ export function useConversations() {
           model: settings.model
         };
         
-        const updatedList = [newConversation, ...prev];
+        const updatedList = [targetConversation, ...prev];
         updatedList.sort((a, b) => b.updatedAt - a.updatedAt);
+        
+        // Async sync
+        syncToSupabase(targetConversation);
+        
         return updatedList.slice(0, MAX_CONVERSATIONS);
       }
     });
@@ -135,13 +220,35 @@ export function useConversations() {
     if (activeId === id) {
       setActiveId(null);
     }
+    
+    // Delete from Supabase
+    const token = localStorage.getItem('pluggable_auth_token');
+    const userId = localStorage.getItem('pluggable_user_id');
+    if (token && userId) {
+      fetch(`${SUPABASE_URL}/rest/v1/conversations?id=eq.${id}&user_id=eq.${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${token}`
+        }
+      }).catch(console.error);
+    }
   }, [activeId]);
 
   const renameConversation = useCallback((id: string, newTitle: string) => {
     if (!newTitle.trim()) return;
-    setConversations(prev =>
-      prev.map(c => c.id === id ? { ...c, title: newTitle.trim(), updatedAt: Date.now() } : c)
-    );
+    
+    setConversations(prev => {
+      const updated = prev.map(c => c.id === id ? { ...c, title: newTitle.trim(), updatedAt: Date.now() } : c);
+      
+      // Async sync
+      const target = updated.find(c => c.id === id);
+      if (target) {
+        syncToSupabase(target);
+      }
+      
+      return updated;
+    });
   }, []);
 
   return {

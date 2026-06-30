@@ -14,7 +14,9 @@ Arquitetura Plug and Play — cada modelo é um provider isolado.
 | Claude 3.5 Sonnet | 📝 Texto/Lógica | Raciocínio | Anthropic | ✅ |
 | Gemini 1.5 Pro | 📝 Texto/Multimodal | Geral+vídeo | Google | ✅ |
 | DALL-E 3 | 🖼️ Imagem | Alta qualidade | OpenAI | ✅ |
-| Midjourney | 🖼️ Imagem | Artístico | Midjourney | ✅ |
+| Midjourney | 🖼️ Imagem | Artístico | Midjourney | ✅ (OpenRouter) |
+| Flux | 🖼️ Imagem | Realismo | Black Forest | ✅ (OpenRouter) |
 | Sora | 🎬 Vídeo | Texto→vídeo | OpenAI | ✅ |
 | Runway Gen-3 | 🎬 Vídeo | Transformação | Runway | ✅ |
-| Suno | 🎵 Áudio/Música | Geração | Suno AI | ✅ |
+| Kling | 🎬 Vídeo | Cinemático | Kling | ✅ (OpenRouter) |
+| Suno | 🎵 Áudio/Música | Geração | Suno AI | ✅ (OpenRouter) |

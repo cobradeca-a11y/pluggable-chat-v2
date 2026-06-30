@@ -368,16 +368,12 @@ Schemas principais: `ChatRequest`, `ChatResponse`, `ImageRequest` (ver `app/sche
 | `openrouter` | `plugins/providers/openrouter.py` | `OPENROUTER_API_KEY` | Sim (tier free) |
 | `ollama` | `plugins/providers/ollama.py` | Ollama rodando localmente | Sim (100%) |
 | `mock` | `plugins/providers/mock.py` | Nada | Sim |
-| `flux` | `plugins/providers/flux.py` | Nada (Mock local) | Sim |
-| `kling` | `plugins/providers/kling.py` | Nada (Mock local) | Sim |
 | `claude` | `plugins/providers/claude.py` | `CLAUDE_API_KEY` | Não |
 | `gpt4o` | `plugins/providers/gpt4o.py` | `OPENAI_API_KEY` | Não |
 | `gemini` | `plugins/providers/gemini.py` | `GOOGLE_API_KEY` | Sim (tier free) |
 | `dalle3` | `plugins/providers/dalle3.py` | `OPENAI_API_KEY` | Não |
 | `sora` | `plugins/providers/sora.py` | `OPENAI_API_KEY` | Não |
 | `runway` | `plugins/providers/runway.py` | `RUNWAY_API_KEY` | Não |
-| `suno` | `plugins/providers/suno.py` | `SUNO_API_KEY` | Não |
-| `midjourney` | `plugins/providers/midjourney.py` | `MIDJOURNEY_API_KEY` | Não |
 
 ---
 

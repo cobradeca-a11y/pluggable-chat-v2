@@ -1,11 +1,11 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import httpx
 from core.loader import load_plugins
 from core.registry import get_all_providers, get_all_middlewares
 from app.config import settings
 from app.routers.chat import router as chat_router
-
+from app.routers.auth import router as auth_router
 load_plugins()
 
 app = FastAPI(title="Pluggable Chat")
@@ -25,6 +25,7 @@ for name in active_middlewares:
         all_middlewares[name](app)
 
 app.include_router(chat_router)
+app.include_router(auth_router)
 
 @app.get("/api/health")
 async def health_check() -> dict[str, str]:
@@ -82,35 +83,50 @@ async def get_provider_models(provider: str) -> dict:
     - claude, gpt4o, gemini, etc: Lista hardcoded
     """
     
-    # HARDCODED (todos os providers menos Ollama)
     PROVIDER_MODELS = {
         "claude": ["claude-3-5-sonnet-20241022", "claude-3-opus-20250219", "claude-3-haiku-20240307"],
         "gpt4o": ["gpt-4o", "gpt-4o-mini"],
         "gemini": ["gemini-1.5-pro", "gemini-1.5-flash"],
-        "openrouter": ["openrouter/auto:free", "meta-llama/llama-2-7b"],
-        "dalle3": ["dall-e-3"],
-        "flux": ["flux.1"],
-        "sora": ["sora"],
-        "runway": ["runway-gen-3"],
-        "midjourney": ["midjourney"],
-        "suno": ["suno"],
+        "openrouter": [
+            "openrouter/auto:free",
+            "meta-llama/llama-2-7b",
+            "openai/gpt-oss-120b",
+            "nvidia/nemotron-3-ultra",
+            "openai/owl-alpha",
+            "bytedance-seed/seedream-4.5",
+            "x-ai/grok-imagine-image-quality",
+            "black-forest-labs/flux.2-pro",
+            "black-forest-labs/flux.2-max",
+            "black-forest-labs/flux.2-flex",
+            "black-forest-labs/flux.2-klein-4b",
+            "google/lyria-3-pro-preview",
+            "google/lyria-3-clip-preview",
+            "alibaba/happyhorse-1.1",
+            "x-ai/grok-imagine-video",
+            "kwaivgi/kling-v3.0-pro",
+            "kwaivgi/kling-v3.0-std",
+            "google/veo-3.1-fast",
+            "google/veo-3.1-lite",
+            "nvidia/llama-nemotron-embed-vl-1b-v2:free"
+        ],
         "mock": ["mock"],
     }
     
-    # OLLAMA - REQUEST DINÂMICO
-    if provider == "ollama":
+    # OLLAMA CLOUD - REQUEST DINÂMICO
+    if provider == "ollama-cloud":
         try:
-            # Tentar OllamaFreeAPI primeiro
             async with httpx.AsyncClient() as client:
-                res = await client.get("https://api.ollamafreapi.com/api/tags", timeout=5)
+                res = await client.get("https://ollama.com/v1/models", timeout=5)
                 if res.status_code == 200:
                     data = res.json()
-                    models = [m["name"] for m in data.get("models", [])]
+                    models = [m["id"] for m in data.get("data", [])]
                     return {"models": models}
-        except:
+        except Exception:
             pass
-        
-        # Fallback: tentar OLLAMA_BASE_URL local
+        return {"models": ["llama3.2:latest", "deepseek-r1:latest", "mistral:latest"]}
+
+    # OLLAMA LOCAL - REQUEST DINÂMICO
+    if provider == "ollama":
         try:
             async with httpx.AsyncClient() as client:
                 res = await client.get(f"{settings.OLLAMA_BASE_URL}/api/tags", timeout=5)
@@ -118,7 +134,7 @@ async def get_provider_models(provider: str) -> dict:
                     data = res.json()
                     models = [m["name"] for m in data.get("models", [])]
                     return {"models": models}
-        except:
+        except Exception:
             pass
         
         # Fallback final: lista padrão

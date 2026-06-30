@@ -1,10 +1,14 @@
 import json
 import httpx
+import uuid
+import asyncio
 from typing import AsyncIterator, List, Optional
 
 from core.protocol import LLMProvider, Message, Attachment
 from core.registry import register_provider
 from app.config import settings
+
+_jobs: dict[str, dict] = {}
 
 @register_provider("openrouter")
 class OpenRouterProvider(LLMProvider):
@@ -21,14 +25,12 @@ class OpenRouterProvider(LLMProvider):
 
     @property
     def supported_attachments(self) -> list[str]:
-        return ["image/png", "image/jpeg", "image/webp"]
+        return ["image/png", "image/jpeg", "image/webp", "audio/mpeg", "video/mp4"]
 
     def _build_messages(self, messages: List[Message], attachment: Optional[Attachment] = None) -> list:
-        """Monta a lista de mensagens para o payload, incluindo content blocks multimodais se houver attachment."""
         payload_messages = [m.model_dump() for m in messages]
 
         if attachment and attachment.type.startswith("image/") and payload_messages:
-            # Substitui a última mensagem do usuário por content blocks multimodais
             last_msg = payload_messages[-1]
             if last_msg.get("role") == "user":
                 payload_messages[-1] = {
@@ -102,3 +104,33 @@ class OpenRouterProvider(LLMProvider):
                 return response.status_code == 200
             except httpx.RequestError:
                 return False
+
+    async def generate_image(self, prompt: str) -> str:
+        messages = [Message(role="user", content=prompt)]
+        return await self.complete(messages)
+
+    async def _bg_generate(self, job_id: str, prompt: str):
+        try:
+            messages = [Message(role="user", content=prompt)]
+            content = await self.complete(messages)
+            _jobs[job_id] = {"status": "completed", "url": content, "progress": 100}
+        except Exception as e:
+            _jobs[job_id] = {"status": "failed", "error": str(e)}
+
+    async def generate_video(self, prompt: str) -> dict:
+        job_id = f"openrouter_{uuid.uuid4()}"
+        _jobs[job_id] = {"status": "processing", "progress": 0}
+        asyncio.create_task(self._bg_generate(job_id, prompt))
+        return {"job_id": job_id, "status": "queued"}
+
+    async def check_video_status(self, job_id: str) -> dict:
+        return _jobs.get(job_id, {"status": "failed", "error": "Job not found"})
+
+    async def generate_audio(self, prompt: str) -> dict:
+        job_id = f"openrouter_{uuid.uuid4()}"
+        _jobs[job_id] = {"status": "processing", "progress": 0}
+        asyncio.create_task(self._bg_generate(job_id, prompt))
+        return {"job_id": job_id, "status": "queued"}
+
+    async def check_audio_status(self, job_id: str) -> dict:
+        return _jobs.get(job_id, {"status": "failed", "error": "Job not found"})

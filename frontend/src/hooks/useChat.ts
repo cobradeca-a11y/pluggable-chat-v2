@@ -31,11 +31,13 @@ export function useChat() {
   }, [conv.activeId]); // Depend on activeId intentionally, avoid activeConversation loops
 
   // Save conversation messages when they change
+  const activeId = conv.activeId;
+  const saveConversation = conv.saveConversation;
   useEffect(() => {
-    if (!isSwitchingRef.current && messages.length > 0 && conv.activeId) {
-      conv.saveConversation(conv.activeId, messages, providerSettings);
+    if (!isSwitchingRef.current && messages.length > 0 && activeId) {
+      saveConversation(activeId, messages, providerSettings);
     }
-  }, [messages, providerSettings, conv]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [messages, providerSettings, activeId, saveConversation]);
 
   // Carregar configurações
   useEffect(() => {

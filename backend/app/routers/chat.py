@@ -1,7 +1,6 @@
 from typing import AsyncGenerator, Union
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
-
 from app.schemas.chat import ChatRequest, ChatResponse, ImageRequest
 from core.registry import get_provider
 from app.config import settings
@@ -113,4 +112,3 @@ async def check_audio(job_id: str) -> dict:
         return await provider.check_audio_status(job_id)
     except NotImplementedError:
         raise HTTPException(status_code=501, detail="Provider não suporta áudio")
-
