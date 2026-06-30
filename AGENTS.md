@@ -268,6 +268,8 @@ def setup(app: FastAPI) -> None:
 | Variável | Padrão | Descrição |
 |---|---|---|
 | `NEXT_PUBLIC_API_URL` | `https://pluggable-chat-v2-production.up.railway.app` | URL do backend FastAPI. Fallback hardcoded aponta para produção para que o deploy na Vercel funcione sem `.env.local`. Em dev local, defina `http://localhost:8000` no `.env.local`. |
+| `NEXT_PUBLIC_SUPABASE_URL` | — | URL pública da API do Supabase para o cliente web. |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | — | Chave anônima (pública) do Supabase. |
 
 ---
 

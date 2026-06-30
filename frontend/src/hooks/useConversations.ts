@@ -5,8 +5,8 @@ const STORE_KEY = "pluggable_chat_conversations";
 const MAX_CONVERSATIONS = 50;
 const TTL_MS = 90 * 24 * 60 * 60 * 1000; // 90 dias
 
-const SUPABASE_URL = "https://eyxlerizjufmttxaahto.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV5eGxlcml6anVmbXR0eGFhaHRvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3NzA0NTYsImV4cCI6MjA5ODM0NjQ1Nn0.m7mCix-R84q7GuT6h3tdZvxD6cKJLDS4Rhv6qTaJ6-s";
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 
 export function useConversations() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
