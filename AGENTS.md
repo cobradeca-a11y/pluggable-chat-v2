@@ -41,6 +41,10 @@ pluggable-chat/
 ├── SETUP_VALIDATION_REPORT.md       ← relatório de validação de setup
 ├── TASK_*.md                        ← tarefas operacionais (001–002)
 ├── STATUS_CARTILHA_*.md             ← relatórios de status (001–017)
+├── AUTH_LOG.md                      ← log da Tarefa B (S4)
+├── COMPLETION_REPORT.md             ← relatório final do projeto (S4)
+├── DEPLOYMENT_LOG.md                ← log de deploy (Tarefa A)
+├── IMPLEMENTATION_LOG.md            ← log de implementação final
 
 ├── backend/
 
@@ -56,7 +60,8 @@ pluggable-chat/
 │   │   └── loader.py                ← auto-discovery de plugins — IMUTÁVEL
 
 │   ├── plugins/
-│   │   ├── providers/               ← um arquivo = um provedor de LLM (13 providers)
+│   │   ├── providers/               ← um arquivo = um provedor de LLM
+
 │   │   │   ├── openrouter.py, ollama.py, ollama_cloud.py, mock.py
 │   │   │   └── claude.py, gpt4o.py, gemini.py
 │   │   ├── middleware/              ← um arquivo = um middleware
@@ -70,7 +75,8 @@ pluggable-chat/
 │   │   ├── schemas/
 │   │   │   └── chat.py              ← ChatRequest, ChatResponse, ImageRequest
 │   │   └── routers/
-│   │       └── chat.py              ← todos os endpoints de chat e geração
+│   │       ├── chat.py              ← todos os endpoints de chat e geração
+│   │       └── auth.py              ← endpoints de autenticação (Magic Link)
 
 │   └── tests/
 │       ├── test_setup.py            ← smoke test de imports
@@ -85,7 +91,9 @@ pluggable-chat/
     │   ├── app/
     │   │   ├── layout.tsx
     │   │   ├── page.tsx             ← UI principal + layout com sidebar
-    │   │   └── globals.css
+    │   │   ├── globals.css
+    │   │   └── login/
+    │   │       └── page.tsx         ← UI de autenticação (Magic Link)
 
     │   ├── components/
     │   │   ├── Sidebar.tsx          ← lista de conversas com busca, rename, export, delete
@@ -98,8 +106,9 @@ pluggable-chat/
     │   │   └── TypingIndicator.tsx
 
     │   ├── hooks/
+    │   │   ├── useAuth.ts           ← gerencia estado de login e persistência local
     │   │   ├── useChat.ts           ← estado + streaming + chamada à API + memória (MEMORY_WINDOW=20)
-    │   │   ├── useConversations.ts  ← gerencia histórico no localStorage
+    │   │   ├── useConversations.ts  ← gerencia histórico no Supabase/localStorage
     │   │   ├── useActiveModel.ts    ← provider/model ativo + supported_attachments
     │   │   ├── useVideoGeneration.ts ← polling de status para geração de vídeo
     │   │   ├── useAvailableModels.ts ← busca modelos disponíveis do provedor ativo
