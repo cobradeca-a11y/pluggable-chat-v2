@@ -11,13 +11,15 @@ from app.config import settings
 class OllamaCloud(LLMProvider):
     """
     Ollama Cloud Inference API
-    Endpoint: https://ollama.com/v1/chat/completions
+    Endpoint: https://ollama.com/api/chat (doc: docs.ollama.com/cloud)
     Models: llama3.2, deepseek, mistral, etc
     """
     
     def __init__(self) -> None:
-        self.base_url = "https://ollama.com/v1"
+        self.base_url = "https://ollama.com/api"
         self.model = settings.OLLAMA_CLOUD_MODEL
+        self.api_key = settings.OLLAMA_API_KEY
+        self.headers = {"Authorization": f"Bearer {self.api_key}"}
 
     @property
     def supported_attachments(self) -> list[str]:
@@ -31,13 +33,14 @@ class OllamaCloud(LLMProvider):
         }
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                f"{self.base_url}/chat/completions",
+                f"{self.base_url}/chat",
                 json=payload,
+                headers=self.headers,
                 timeout=120.0,
             )
             response.raise_for_status()
             data = response.json()
-            return data["choices"][0]["message"]["content"]
+            return data["message"]["content"]
 
     async def stream(self, messages: List[Message], attachment: Optional[Attachment] = None) -> AsyncIterator[str]:
         payload = {
@@ -48,8 +51,9 @@ class OllamaCloud(LLMProvider):
         async with httpx.AsyncClient() as client:
             async with client.stream(
                 "POST",
-                f"{self.base_url}/chat/completions",
+                f"{self.base_url}/chat",
                 json=payload,
+                headers=self.headers,
                 timeout=120.0,
             ) as response:
                 response.raise_for_status()
@@ -57,25 +61,22 @@ class OllamaCloud(LLMProvider):
                     line = line.strip()
                     if not line:
                         continue
-                    if line == "data: [DONE]":
-                        break
-                    if line.startswith("data: "):
-                        try:
-                            data = json.loads(line[6:])
-                            choices = data.get("choices", [])
-                            if choices:
-                                delta = choices[0].get("delta", {})
-                                content = delta.get("content", "")
-                                if content:
-                                    yield content
-                        except json.JSONDecodeError:
-                            continue
+                    try:
+                        data = json.loads(line)
+                        content = data.get("message", {}).get("content", "")
+                        if content:
+                            yield content
+                        if data.get("done"):
+                            break
+                    except json.JSONDecodeError:
+                        continue
 
     async def health(self) -> bool:
         async with httpx.AsyncClient() as client:
             try:
                 response = await client.get(
-                    f"{self.base_url}/models",
+                    f"{self.base_url}/tags",
+                    headers=self.headers,
                     timeout=5.0,
                 )
                 return response.status_code == 200

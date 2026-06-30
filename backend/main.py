@@ -96,26 +96,12 @@ async def get_provider_models(provider: str) -> dict:
         "gpt4o": ["gpt-4o", "gpt-4o-mini"],
         "gemini": ["gemini-1.5-pro", "gemini-1.5-flash"],
         "openrouter": [
-            "openrouter/auto:free",
-            "meta-llama/llama-2-7b",
-            "openai/gpt-oss-120b",
-            "nvidia/nemotron-3-ultra",
-            "openai/owl-alpha",
-            "bytedance-seed/seedream-4.5",
-            "x-ai/grok-imagine-image-quality",
-            "black-forest-labs/flux.2-pro",
-            "black-forest-labs/flux.2-max",
-            "black-forest-labs/flux.2-flex",
-            "black-forest-labs/flux.2-klein-4b",
-            "google/lyria-3-pro-preview",
-            "google/lyria-3-clip-preview",
-            "alibaba/happyhorse-1.1",
-            "x-ai/grok-imagine-video",
-            "kwaivgi/kling-v3.0-pro",
-            "kwaivgi/kling-v3.0-std",
-            "google/veo-3.1-fast",
-            "google/veo-3.1-lite",
-            "nvidia/llama-nemotron-embed-vl-1b-v2:free"
+            "openrouter/owl-alpha",
+            "openai/gpt-oss-120b:free",
+            "nvidia/nemotron-3-super-120b-a12b:free",
+            "moonshotai/kimi-k2.6:free",
+            "poolside/laguna-m.1:free",
+            "z-ai/glm-4.5-air:free",
         ],
         "mock": ["mock"],
     }
@@ -124,14 +110,20 @@ async def get_provider_models(provider: str) -> dict:
     if provider == "ollama-cloud":
         try:
             async with httpx.AsyncClient() as client:
-                res = await client.get("https://ollama.com/v1/models", timeout=5)
+                res = await client.get(
+                    "https://ollama.com/api/tags",
+                    headers={"Authorization": f"Bearer {settings.OLLAMA_API_KEY}"},
+                    timeout=5,
+                )
                 if res.status_code == 200:
                     data = res.json()
-                    models = [m["id"] for m in data.get("data", [])]
-                    return {"models": models}
+                    models = [m["name"] for m in data.get("models", [])]
+                    if models:
+                        return {"models": models}
         except Exception:
             pass
-        return {"models": ["llama3.2:latest", "deepseek-r1:latest", "mistral:latest"]}
+        # Fallback: modelos conhecidos via API direta (sem sufixo :cloud, que é só para CLI local)
+        return {"models": ["gpt-oss:120b", "kimi-k2.6", "glm-5.1", "minimax-m3"]}
 
     # OLLAMA LOCAL - REQUEST DINÂMICO
     if provider == "ollama":
