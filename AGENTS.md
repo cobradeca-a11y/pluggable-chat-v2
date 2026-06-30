@@ -368,6 +368,9 @@ Schemas principais: `ChatRequest`, `ChatResponse`, `ImageRequest` (ver `app/sche
 | 2026-06 | Polling client-side com `useVideoGeneration` hook | Timeout 10min, intervalo 3s, máx 200 polls |
 | 2026-06 | `ImageRequest` schema separado de `ChatRequest` | Endpoints de geração multimodal usam prompt direto, sem histórico de mensagens |
 | 2026-06 | Provider/model/api_key overrides via request body | Frontend pode selecionar provider dinamicamente sem reiniciar backend |
+| 2026-06 | Credenciais Supabase via `process.env.NEXT_PUBLIC_*` no frontend, nunca hardcoded | Contrato #3 do AGENTS.md; permite rotação de chave sem novo deploy |
+| 2026-06 | `requirements.txt` deve ser sempre verificado em UTF-8 puro, sem BOM | Encoding corrompido causou falha silenciosa de instalação do pacote `supabase` em produção, quebrando `/api/auth/*` por dias sem erro visível no boot |
+| 2026-06 | Nome do pacote Python correto é `supabase`, não `supabase-py` (descontinuado) | Evitar reincidência do bug de dependência |
 
 ---
 
@@ -421,7 +424,7 @@ Schemas principais: `ChatRequest`, `ChatResponse`, `ImageRequest` (ver `app/sche
 | Geração de imagem (DALL-E 3, Flux, Midjourney) | ✅ Expandido | Integrado via OpenRouter |
 | Geração de vídeo (Sora, Runway, Kling) | ✅ Expandido | Integrado via OpenRouter |
 | Geração de áudio (Suno) | ✅ Expandido | Integrado via OpenRouter |
-| Autenticação (Magic Link / Supabase) | ✅ Implementado | `useAuth.ts` |
+| Autenticação (Magic Link / Supabase) | ✅ Implementado e validado em produção | `useAuth.ts` |
 | Histórico em Nuvem (Supabase) | ✅ Implementado | `useConversations.ts` |
 
 Status: **S4 COMPLETA (Autenticação + Cloud Sync)** | Backlog restante bloqueado
@@ -453,6 +456,14 @@ sem instrução explícita do dono do projeto**. Registradas aqui para não se p
 - **Preview deploys** — Vercel já faz isso; Railway precisaria de configuração extra
 - **Secrets management** — Vault ou Railway Environments para separar staging/produção
 - **Monitoramento** — uptime check + alertas de erro no Railway
+
+---
+
+## Lições aprendidas (Troubleshooting)
+
+- **Sempre verifique o encoding de `requirements.txt`**: Ao ser editado por agentes de IA, pode ocorrer a injeção acidental de formatação quebrada ou BOM (UTF-16). Salve sempre em UTF-8 limpo para evitar falhas silenciosas de instalação de dependências na nuvem.
+- **Valide o deploy ativo**: Sempre confirme no dashboard (ex: Railway) se o deploy que está rodando é efetivamente posterior ao seu último *commit* relevante. Não assuma que uma correção "não funcionou" sem garantir que ela já foi distribuída e inicializada no servidor.
+- **Nomes de pacotes Python**: O pacote correto para o Supabase no Python é `supabase` (versões `>=2.0`), descartando completamente o antigo `supabase-py`.
 
 ---
 
