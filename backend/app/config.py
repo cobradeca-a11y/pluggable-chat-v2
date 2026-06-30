@@ -17,9 +17,9 @@ class Settings(BaseSettings):
     ALLOWED_ORIGIN: str = "http://localhost:3000"
     ACTIVE_MIDDLEWARE: str = "rate_limit,request_logger"
     RATE_LIMIT_RPM: int = 100
-    SUPABASE_URL: str = "https://eyxlerizjufmttxaahto.supabase.co"
-    SUPABASE_KEY: str = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV5eGxlcml6anVmbXR0eGFhaHRvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3NzA0NTYsImV4cCI6MjA5ODM0NjQ1Nn0.m7mCix-R84q7GuT6h3tdZvxD6cKJLDS4Rhv6qTaJ6-s"
-    SUPABASE_SERVICE_ROLE_KEY: str = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV5eGxlcml6anVmbXR0eGFhaHRvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4Mjc3MDQ1NiwiZXhwIjoyMDk4MzQ2NDU2fQ.-HN1qhToJtw2ZlBHPcv16xSbwSOcJNydpt7aHPV9yjo"
+    SUPABASE_URL: str = ""
+    SUPABASE_KEY: str = ""
+    SUPABASE_SERVICE_ROLE_KEY: str = ""
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
