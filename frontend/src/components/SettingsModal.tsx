@@ -51,8 +51,6 @@ export function SettingsModal({ isOpen, onClose, settings, onSave }: SettingsMod
       defaultModel = 'openrouter/auto:free';
     } else if (provider === 'ollama' && !defaultModel.includes('llama')) {
       defaultModel = 'llama3.2';
-    } else if (provider === 'flux') {
-      defaultModel = 'flux.1';
     }
 
     setLocalSettings({ ...localSettings, provider, model: defaultModel });

@@ -32,7 +32,7 @@ function LoginContent() {
 
   const verifyToken = async (emailToVerify: string, token: string) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/verify`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://pluggable-chat-v2-production.up.railway.app'}/api/auth/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: emailToVerify, token })
@@ -57,7 +57,7 @@ function LoginContent() {
     setError('');
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/send-link`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://pluggable-chat-v2-production.up.railway.app'}/api/auth/send-link`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
