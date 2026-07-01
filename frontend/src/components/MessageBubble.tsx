@@ -52,7 +52,7 @@ export function MessageBubble({ message, onRetry }: MessageBubbleProps) {
       marginBottom: 16,
       justifyContent: isUser ? 'flex-end' : 'flex-start'
     }}>
-      <div style={{ position: 'relative', maxWidth: '85%' }}>
+      <div style={{ position: 'relative', maxWidth: 'min(85%, 640px)' }}>
         <div style={{
           padding: '10px 14px',
           borderRadius: isUser ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
