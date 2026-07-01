@@ -94,7 +94,7 @@ async def get_provider_models(provider: str) -> dict:
     PROVIDER_MODELS = {
         "claude": ["claude-3-5-sonnet-20241022", "claude-3-opus-20250219", "claude-3-haiku-20240307"],
         "gpt4o": ["gpt-4o", "gpt-4o-mini"],
-        "gemini": ["gemini-1.5-pro", "gemini-1.5-flash"],
+        "gemini": ["gemini-3.5-flash"],
         "openrouter": [
             "openrouter/owl-alpha",
             "openai/gpt-oss-120b:free",
