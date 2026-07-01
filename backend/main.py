@@ -6,6 +6,7 @@ from core.registry import get_all_providers, get_all_middlewares
 from app.config import settings
 from app.routers.chat import router as chat_router
 from app.routers.auth import router as auth_router
+from app.routers.personas import router as personas_router
 load_plugins()
 
 app = FastAPI(title="Pluggable Chat")
@@ -26,6 +27,7 @@ for name in active_middlewares:
 
 app.include_router(chat_router)
 app.include_router(auth_router)
+app.include_router(personas_router)
 
 @app.get("/api/health")
 async def health_check() -> dict[str, str]:

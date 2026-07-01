@@ -12,6 +12,7 @@ interface ChatInputProps {
   onAttach: (attachment: Attachment | null) => void;
   onAttachError?: (message: string) => void;
   providerCapabilities?: { canText: boolean, canImage: boolean, canVideo: boolean };
+  personaSelector?: React.ReactNode;
 }
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -19,7 +20,7 @@ const ACCEPTED_TYPES = '.pdf,.png,.jpg,.jpeg,.webp';
 
 export function ChatInput({ 
   input, setInput, loading, sendMessage, stopGeneration, 
-  attachment, onAttach, onAttachError, providerCapabilities 
+  attachment, onAttach, onAttachError, providerCapabilities, personaSelector
 }: ChatInputProps) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
@@ -163,6 +164,12 @@ export function ChatInput({
           >
             ✕
           </button>
+        </div>
+      )}
+
+      {personaSelector && (
+        <div style={{ marginBottom: 8 }}>
+          {personaSelector}
         </div>
       )}
 

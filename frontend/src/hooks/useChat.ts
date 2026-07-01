@@ -1,9 +1,11 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Message, ProviderSettings, ChatRequest, Attachment } from "../lib/types";
 import { useConversations } from "./useConversations";
+import { usePersonas } from "./usePersonas";
 
 export function useChat() {
   const conv = useConversations();
+  const personas = usePersonas();
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -152,6 +154,12 @@ export function useChat() {
         }
 
         const payload: ChatRequest = { messages: contextMessages };
+        if (personas.activePersona?.system_prompt) {
+          payload.messages = [
+            { role: "system", content: personas.activePersona.system_prompt },
+            ...contextMessages,
+          ];
+        }
         if (attachment) {
           payload.attachment = attachment;
         }
@@ -256,7 +264,7 @@ export function useChat() {
         setLoading(false);
       }
     },
-    [messages, showToast, providerSettings]
+    [messages, showToast, providerSettings, personas.activePersona]
   );
 
   const retryLastMessage = useCallback(() => {
@@ -285,6 +293,7 @@ export function useChat() {
     messages, input, setInput, loading, toast, 
     clearToast, showToast, sendMessage, retryLastMessage, clearChat,
     providerSettings, saveProviderSettings, stopGeneration,
-    conversations: conv
+    conversations: conv,
+    personas
   };
 }
