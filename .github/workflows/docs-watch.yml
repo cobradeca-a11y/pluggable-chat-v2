@@ -5,6 +5,10 @@ on:
     - cron: "0 12 * * 1"  # toda segunda, 12h UTC
   workflow_dispatch: {}
 
+permissions:
+  contents: write
+  issues: write
+
 jobs:
   check-docs:
     runs-on: ubuntu-latest
