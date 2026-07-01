@@ -60,6 +60,14 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
                 yield f"data: {chunk}\n\n"
         except NotImplementedError:
             yield "data: [ERROR] Provider não suporta geração de texto (stream)\n\n"
+        except httpx.HTTPStatusError as e:
+            try:
+                body = e.response.json()
+            except Exception:
+                body = e.response.text[:200]
+            yield f"data: [ERROR] HTTP {e.response.status_code}: {body}\n\n"
+        except Exception as e:
+            yield f"data: [ERROR] {str(e)[:200]}\n\n"
         yield "data: [DONE]\n\n"
         
     return StreamingResponse(sse_generator(), media_type="text/event-stream")
