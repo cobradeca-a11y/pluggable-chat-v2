@@ -19,9 +19,16 @@ export function useChat() {
   });
 
   const isSwitchingRef = useRef(false);
+  const suppressNextResetRef = useRef(false);
 
   // Load conversation messages when activeId changes
   useEffect(() => {
+    if (suppressNextResetRef.current) {
+      // Uma nova conversa foi criada dentro de sendMessage, que já está
+      // gerenciando o array de mensagens manualmente; não sobrescrever.
+      suppressNextResetRef.current = false;
+      return;
+    }
     if (conv.activeId) {
       isSwitchingRef.current = true;
       setMessages(conv.activeConversation?.messages || []);
