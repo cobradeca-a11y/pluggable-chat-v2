@@ -87,7 +87,7 @@ async def list_plugins() -> dict:
     return {
         "providers": provider_list,
         "active_provider": settings.LLM_PROVIDER,
-        "active_model": _default_models.get(settings.LLM_PROVIDER, "")
+        "default_models": _default_models
     }
 
 @app.get("/api/plugins/{provider}/models")

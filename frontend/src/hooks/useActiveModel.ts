@@ -31,7 +31,7 @@ export function useActiveModel(providerSettings: ProviderSettings) {
           const data = await res.json();
           if (isMounted) {
             const activeProvider = providerSettings.provider || data.active_provider || 'mock';
-            const activeModel = providerSettings.model || data.active_model || '';
+            const activeModel = providerSettings.model || (data.default_models && data.default_models[activeProvider]) || '';
 
             const providersList = data.providers || [];
             const providerData = providersList.find((p: any) => p.name === activeProvider) || {};
