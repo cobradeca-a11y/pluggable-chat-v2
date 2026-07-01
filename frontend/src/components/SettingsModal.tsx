@@ -34,6 +34,15 @@ export function SettingsModal({ isOpen, onClose, settings, onSave }: SettingsMod
     }
   }, [isOpen, settings]);
 
+  // Corrige o modelo selecionado se ele não pertencer mais à lista de
+  // modelos disponíveis do provider atual (evita salvar combinações
+  // inválidas como provider "gemini" + modelo de outro provider).
+  useEffect(() => {
+    if (!modelsLoading && availableModels.length > 0 && !availableModels.includes(localSettings.model)) {
+      setLocalSettings((prev) => ({ ...prev, model: availableModels[0] }));
+    }
+  }, [availableModels, modelsLoading, localSettings.model]);
+
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
