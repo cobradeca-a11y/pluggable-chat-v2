@@ -11,9 +11,16 @@ router = APIRouter(prefix="/api/personas", tags=["personas"])
 
 
 def _client():
-    if not settings.SUPABASE_URL or not settings.SUPABASE_KEY:
+    """
+    Usa a Service Role Key: o backend já validou o usuário via JWT em
+    get_current_user_id, então filtramos por user_id em código (não via RLS,
+    que exigiria repassar a sessão do usuário ao client, o que supabase-py
+    não faz automaticamente a partir de um JWT já emitido).
+    """
+    key = settings.SUPABASE_SERVICE_ROLE_KEY or settings.SUPABASE_KEY
+    if not settings.SUPABASE_URL or not key:
         raise HTTPException(status_code=500, detail="Supabase não configurado no backend")
-    return create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+    return create_client(settings.SUPABASE_URL, key)
 
 
 class PersonaCreate(BaseModel):
