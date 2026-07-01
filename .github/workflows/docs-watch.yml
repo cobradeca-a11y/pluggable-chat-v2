@@ -1,0 +1,54 @@
+name: Watch external docs
+
+on:
+  schedule:
+    - cron: "0 12 * * 1"  # toda segunda, 12h UTC
+  workflow_dispatch: {}
+
+jobs:
+  check-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check pages for changes
+        id: check
+        run: |
+          declare -A PAGES=(
+            ["ollama-cloud"]="https://docs.ollama.com/cloud"
+            ["gemini-getstarted"]="https://ai.google.dev/gemini-api/docs/get-started"
+          )
+          CHANGED=""
+          for name in "${!PAGES[@]}"; do
+            url="${PAGES[$name]}"
+            new_hash=$(curl -sL "$url" | sha256sum | cut -d' ' -f1)
+            old_file="docs-snapshot/${name}.hash"
+            old_hash=$(cat "$old_file" 2>/dev/null || echo "")
+            if [ -n "$old_hash" ] && [ "$old_hash" != "$new_hash" ]; then
+              CHANGED="${CHANGED}- **${name}**: ${url}\n"
+            fi
+            echo "$new_hash" > "$old_file"
+          done
+          echo "changed<<EOF" >> "$GITHUB_OUTPUT"
+          echo -e "$CHANGED" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: Commit updated hashes
+        run: |
+          git config user.name "docs-watch-bot"
+          git config user.email "actions@github.com"
+          git add docs-snapshot/
+          git diff --cached --quiet || git commit -m "chore: update docs snapshot hashes"
+          git push
+
+      - name: Open issue if changed
+        if: ${{ steps.check.outputs.changed != '' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: "Docs externas mudaram - revisar",
+              body: `As seguintes páginas de documentação externa mudaram desde a última checagem:\n\n${{ steps.check.outputs.changed }}\n\nRevisar se o código (gemini.py, ollama_cloud.py) ainda está de acordo.`
+            })
