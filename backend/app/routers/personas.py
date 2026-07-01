@@ -70,7 +70,10 @@ async def generate_persona(payload: GenerateRequest, user_id: str = Depends(get_
     Usa o provider padrão (texto) para transformar uma descrição em linguagem
     natural em um system prompt de persona pronto para uso, mais um nome curto.
     """
-    provider = get_provider(settings.LLM_PROVIDER)()
+    # Usa um provider de texto capaz de fato, não o LLM_PROVIDER global
+    # (que pode estar em "mock" para o chat padrão)
+    provider_name = "gemini" if settings.GOOGLE_API_KEY else settings.LLM_PROVIDER
+    provider = get_provider(provider_name)()
 
     meta_prompt = (
         "Você gera personas (system prompts) para um assistente de IA. "
