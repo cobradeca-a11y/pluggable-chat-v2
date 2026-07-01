@@ -76,9 +76,18 @@ async def list_plugins() -> dict:
                 "supported_attachments": []
             })
             
+    _default_models = {
+        "claude": settings.CLAUDE_MODEL,
+        "gemini": settings.GOOGLE_MODEL,
+        "gpt4o": settings.OPENAI_MODEL,
+        "ollama": settings.OLLAMA_MODEL,
+        "ollama-cloud": settings.OLLAMA_CLOUD_MODEL,
+        "mock": "mock",
+    }
     return {
         "providers": provider_list,
-        "active_provider": settings.LLM_PROVIDER
+        "active_provider": settings.LLM_PROVIDER,
+        "active_model": _default_models.get(settings.LLM_PROVIDER, "")
     }
 
 @app.get("/api/plugins/{provider}/models")
@@ -99,14 +108,18 @@ async def get_provider_models(provider: str) -> dict:
             "openrouter/owl-alpha",
             "openai/gpt-oss-120b:free",
             "nvidia/nemotron-3-super-120b-a12b:free",
-            "moonshotai/kimi-k2.6:free",
             "poolside/laguna-m.1:free",
-            "z-ai/glm-4.5-air:free",
         ],
         "mock": ["mock"],
     }
     
     # OLLAMA CLOUD - REQUEST DINÂMICO
+    OLLAMA_CLOUD_WHITELIST = [
+        "minimax-m2.5", "gemma3:27b", "nemotron-3-super", "glm-4.7",
+        "minimax-m2.1", "gpt-oss:20b", "gemma3:12b", "qwen3-coder-next",
+        "gemma3:4b", "gpt-oss:120b", "nemotron-3-ultra", "qwen3-coder:480b",
+        "nemotron-3-nano:30b", "minimax-m3", "gemma4:31b",
+    ]
     if provider == "ollama-cloud":
         try:
             async with httpx.AsyncClient() as client:
@@ -117,13 +130,14 @@ async def get_provider_models(provider: str) -> dict:
                 )
                 if res.status_code == 200:
                     data = res.json()
-                    models = [m["name"] for m in data.get("models", [])]
-                    if models:
-                        return {"models": models}
+                    live_models = {m["name"] for m in data.get("models", [])}
+                    filtered = [m for m in OLLAMA_CLOUD_WHITELIST if m in live_models]
+                    if filtered:
+                        return {"models": filtered}
         except Exception:
             pass
-        # Fallback: modelos conhecidos via API direta (sem sufixo :cloud, que é só para CLI local)
-        return {"models": ["gpt-oss:120b", "kimi-k2.6", "glm-5.1", "minimax-m3"]}
+        # Fallback: whitelist completa (sem checar disponibilidade ao vivo)
+        return {"models": OLLAMA_CLOUD_WHITELIST}
 
     # OLLAMA LOCAL - REQUEST DINÂMICO
     if provider == "ollama":

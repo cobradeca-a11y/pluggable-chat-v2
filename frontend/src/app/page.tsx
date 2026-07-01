@@ -91,7 +91,7 @@ export default function Home() {
 
   useEffect(() => {
     if (isAutoScroll) {
-      endOfMessagesRef.current?.scrollIntoView({ behavior: 'auto' });
+      endOfMessagesRef.current?.scrollIntoView({ behavior: 'auto', block: 'end' });
     }
   }, [messages, isAutoScroll]);
 
@@ -240,7 +240,7 @@ export default function Home() {
         </header>
 
         {/* Chat Area */}
-        <main ref={mainRef} onScroll={handleScroll} style={{ flex: 1, overflowY: 'auto', padding: '24px 20px', paddingBottom: '120px' }}>
+        <main ref={mainRef} onScroll={handleScroll} style={{ flex: 1, overflowY: 'auto', padding: '24px 20px', paddingBottom: '160px' }}>
           <div style={{ maxWidth: 720, margin: '0 auto' }}>
             {messages.length === 0 ? (
               <div style={{ textAlign: 'center', marginTop: 80 }}>
