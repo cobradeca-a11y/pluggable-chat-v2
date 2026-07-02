@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { supabase } from "../lib/supabaseClient";
 
 export interface Persona {
   id: string;
@@ -9,9 +10,9 @@ export interface Persona {
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://pluggable-chat-v2-production.up.railway.app";
 
-function authHeaders(): HeadersInit {
-  const token = typeof window !== "undefined" ? localStorage.getItem("pluggable_auth_token") : null;
-  return token ? { Authorization: `Bearer ${token}` } : {};
+async function authHeaders(): Promise<HeadersInit> {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {};
 }
 
 export function usePersonas() {
@@ -22,7 +23,7 @@ export function usePersonas() {
   const fetchPersonas = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${BASE_URL}/api/personas`, { headers: authHeaders() });
+      const res = await fetch(`${BASE_URL}/api/personas`, { headers: await authHeaders() });
       if (res.ok) {
         setPersonas(await res.json());
       }
@@ -48,7 +49,7 @@ export function usePersonas() {
     try {
       const res = await fetch(`${BASE_URL}/api/personas`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", ...authHeaders() },
+        headers: { "Content-Type": "application/json", ...(await authHeaders()) },
         body: JSON.stringify({ name, system_prompt: systemPrompt }),
       });
       if (res.ok) {
@@ -64,7 +65,7 @@ export function usePersonas() {
 
   const deletePersona = async (id: string) => {
     try {
-      await fetch(`${BASE_URL}/api/personas/${id}`, { method: "DELETE", headers: authHeaders() });
+      await fetch(`${BASE_URL}/api/personas/${id}`, { method: "DELETE", headers: await authHeaders() });
       if (activePersonaId === id) selectPersona("");
       await fetchPersonas();
     } catch (e) {
@@ -76,7 +77,7 @@ export function usePersonas() {
     try {
       const res = await fetch(`${BASE_URL}/api/personas/generate`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", ...authHeaders() },
+        headers: { "Content-Type": "application/json", ...(await authHeaders()) },
         body: JSON.stringify({ description }),
       });
       if (res.ok) return await res.json();

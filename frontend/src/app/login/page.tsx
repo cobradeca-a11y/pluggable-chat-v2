@@ -2,49 +2,34 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { SettingsModal } from '@/components/SettingsModal';
+import { supabase } from '@/lib/supabaseClient';
 
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState('');
 
-  const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-
   useEffect(() => {
-    // Supabase redireciona de volta com o token no hash da URL (funciona igual para OAuth e Magic Link)
-    const hash = window.location.hash;
-    if (hash && hash.includes('access_token')) {
-      const params = new URLSearchParams(hash.substring(1));
-      const accessToken = params.get('access_token');
-      if (accessToken) {
-        localStorage.setItem('pluggable_auth_token', accessToken);
-        try {
-          // JWT: header.payload.signature - decodifica o payload (base64url) para extrair o "sub" (user id)
-          const payloadB64 = accessToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-          const payload = JSON.parse(atob(payloadB64));
-          if (payload.sub) {
-            localStorage.setItem('pluggable_user_id', payload.sub);
-          }
-        } catch (e) {
-          console.error('Failed to decode JWT payload', e);
-        }
-        router.push('/');
-      }
-    }
+    // O client oficial já processa o token do hash da URL sozinho
+    // (detectSessionInUrl: true); só precisamos redirecionar quando
+    // uma sessão válida existir.
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) router.push('/');
+    });
+
     const oauthError = searchParams?.get('error_description');
     if (oauthError) {
       setError(decodeURIComponent(oauthError));
     }
   }, [router, searchParams]);
 
-  const handleGoogleLogin = () => {
-    if (!SUPABASE_URL) {
-      setError('Configuração ausente: NEXT_PUBLIC_SUPABASE_URL não definida.');
-      return;
-    }
+  const handleGoogleLogin = async () => {
     const redirectTo = `${window.location.origin}/login`;
-    window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectTo)}`;
+    const { error: oauthErr } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo },
+    });
+    if (oauthErr) setError(oauthErr.message);
   };
 
   return (

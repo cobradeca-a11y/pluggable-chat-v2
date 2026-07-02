@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { Conversation, ConversationsStore, Message, ProviderSettings } from "../lib/types";
+import { supabase } from "../lib/supabaseClient";
 
 const STORE_KEY = "pluggable_chat_conversations";
 const MAX_CONVERSATIONS = 50;
@@ -7,6 +8,12 @@ const TTL_MS = 90 * 24 * 60 * 60 * 1000; // 90 dias
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+
+// Lê a sessão atual do client oficial (já com refresh automático garantido)
+async function getAuthContext() {
+  const { data: { session } } = await supabase.auth.getSession();
+  return { token: session?.access_token ?? null, userId: session?.user?.id ?? null };
+}
 
 export function useConversations() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -16,8 +23,7 @@ export function useConversations() {
   // Carregar dados (Supabase ou LocalStorage)
   useEffect(() => {
     const loadData = async () => {
-      const token = localStorage.getItem('pluggable_auth_token');
-      const userId = localStorage.getItem('pluggable_user_id');
+      const { token, userId } = await getAuthContext();
 
       if (token && userId) {
         // Autenticado: buscar do Supabase
@@ -89,10 +95,7 @@ export function useConversations() {
   // Salvar no localStorage (activeId) e gerenciar debounce para Supabase/LocalStorage
   useEffect(() => {
     if (!isInitialized) return;
-    
-    const token = localStorage.getItem('pluggable_auth_token');
-    const userId = localStorage.getItem('pluggable_user_id');
-    
+
     const timer = setTimeout(() => {
       const valid = conversations.filter(c => c.messages.some(m => m.role === 'user'));
       
@@ -129,8 +132,7 @@ export function useConversations() {
   }, []);
 
   const syncToSupabase = async (conversation: Conversation) => {
-    const token = localStorage.getItem('pluggable_auth_token');
-    const userId = localStorage.getItem('pluggable_user_id');
+    const { token, userId } = await getAuthContext();
     
     if (token && userId) {
       try {
@@ -215,15 +217,14 @@ export function useConversations() {
     });
   }, [generateTitle]);
 
-  const deleteConversation = useCallback((id: string) => {
+  const deleteConversation = useCallback(async (id: string) => {
     setConversations(prev => prev.filter(c => c.id !== id));
     if (activeId === id) {
       setActiveId(null);
     }
     
     // Delete from Supabase
-    const token = localStorage.getItem('pluggable_auth_token');
-    const userId = localStorage.getItem('pluggable_user_id');
+    const { token, userId } = await getAuthContext();
     if (token && userId) {
       fetch(`${SUPABASE_URL}/rest/v1/conversations?id=eq.${id}&user_id=eq.${userId}`, {
         method: 'DELETE',
