@@ -111,7 +111,20 @@ export default function Home() {
   };
 
   if (isAuthenticated === null || isAuthenticated === false) {
-    return <div style={{ height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: theme === 'dark' ? '#09090b' : '#fafafa', color: theme === 'dark' ? '#f4f4f5' : '#18181b' }}>Carregando...</div>;
+    return (
+      <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', gap: 16, justifyContent: 'center', alignItems: 'center', backgroundColor: theme === 'dark' ? '#09090b' : '#fafafa', color: theme === 'dark' ? '#f4f4f5' : '#18181b' }}>
+        <div style={{
+          width: 32, height: 32, borderRadius: '50%',
+          border: `3px solid ${theme === 'dark' ? '#27272a' : '#e4e4e7'}`,
+          borderTopColor: '#3b82f6',
+          animation: 'spin 0.8s linear infinite'
+        }} />
+        <style jsx>{`
+          @keyframes spin { to { transform: rotate(360deg); } }
+        `}</style>
+        <span style={{ fontSize: 14, opacity: 0.7 }}>Verificando sessão...</span>
+      </div>
+    );
   }
 
   return (

@@ -64,7 +64,11 @@ export function Sidebar({ conversations, activeId, onSelect, onNew, onDelete, on
 
   // Filtrar conversas pela busca
   const filteredConversations = searchQuery.trim()
-    ? conversations.filter(c => c.title.toLowerCase().includes(searchQuery.toLowerCase()))
+    ? conversations.filter(c => {
+        const q = searchQuery.toLowerCase();
+        if (c.title.toLowerCase().includes(q)) return true;
+        return c.messages.some(m => m.content?.toLowerCase().includes(q));
+      })
     : conversations;
 
   return (
