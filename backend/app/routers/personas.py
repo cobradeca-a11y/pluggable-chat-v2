@@ -1,26 +1,12 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from supabase import create_client
 from app.config import settings
-from app.deps import get_current_user_id
+from app.deps import get_current_user_id, get_supabase_admin_client
 from core.registry import get_provider
 from core.protocol import Message
 
 router = APIRouter(prefix="/api/personas", tags=["personas"])
-
-
-def _client():
-    """
-    Usa a Service Role Key: o backend já validou o usuário via JWT em
-    get_current_user_id, então filtramos por user_id em código (não via RLS,
-    que exigiria repassar a sessão do usuário ao client, o que supabase-py
-    não faz automaticamente a partir de um JWT já emitido).
-    """
-    key = settings.SUPABASE_SERVICE_ROLE_KEY or settings.SUPABASE_KEY
-    if not settings.SUPABASE_URL or not key:
-        raise HTTPException(status_code=500, detail="Supabase não configurado no backend")
-    return create_client(settings.SUPABASE_URL, key)
 
 
 class PersonaCreate(BaseModel):
@@ -46,14 +32,14 @@ class GenerateResponse(BaseModel):
 
 @router.get("", response_model=List[PersonaOut])
 async def list_personas(user_id: str = Depends(get_current_user_id)):
-    client = _client()
+    client = get_supabase_admin_client()
     res = client.table("personas").select("*").eq("user_id", user_id).order("created_at", desc=True).execute()
     return res.data
 
 
 @router.post("", response_model=PersonaOut)
 async def create_persona(payload: PersonaCreate, user_id: str = Depends(get_current_user_id)):
-    client = _client()
+    client = get_supabase_admin_client()
     res = client.table("personas").insert({
         "user_id": user_id,
         "name": payload.name,
@@ -66,7 +52,7 @@ async def create_persona(payload: PersonaCreate, user_id: str = Depends(get_curr
 
 @router.delete("/{persona_id}")
 async def delete_persona(persona_id: str, user_id: str = Depends(get_current_user_id)):
-    client = _client()
+    client = get_supabase_admin_client()
     client.table("personas").delete().eq("id", persona_id).eq("user_id", user_id).execute()
     return {"status": "ok"}
 
@@ -77,6 +63,9 @@ async def generate_persona(payload: GenerateRequest, user_id: str = Depends(get_
     Usa o provider padrão (texto) para transformar uma descrição em linguagem
     natural em um system prompt de persona pronto para uso, mais um nome curto.
     """
+    import json
+    import re
+
     # Usa um provider de texto capaz de fato, não o LLM_PROVIDER global
     # (que pode estar em "mock" para o chat padrão)
     provider_name = "gemini" if settings.GOOGLE_API_KEY else settings.LLM_PROVIDER
@@ -84,10 +73,11 @@ async def generate_persona(payload: GenerateRequest, user_id: str = Depends(get_
 
     meta_prompt = (
         "Você gera personas (system prompts) para um assistente de IA. "
-        "Dada a descrição de necessidade abaixo, responda ESTRITAMENTE no formato:\n"
-        "NOME: <nome curto da persona, até 6 palavras>\n"
-        "PROMPT: <system prompt completo, em português, definindo tom, especialidade, "
-        "e como a persona deve se comportar>\n\n"
+        "Dada a descrição de necessidade abaixo, responda ESTRITAMENTE com um "
+        "objeto JSON válido, sem texto antes ou depois, sem markdown, no formato exato:\n"
+        '{"name": "<nome curto da persona, até 6 palavras>", '
+        '"system_prompt": "<system prompt completo, em português, definindo tom, '
+        'especialidade, e como a persona deve se comportar>"}\n\n'
         f"Descrição da necessidade: {payload.description}"
     )
 
@@ -96,16 +86,24 @@ async def generate_persona(payload: GenerateRequest, user_id: str = Depends(get_
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Falha ao gerar persona: {e}")
 
-    name = "Persona personalizada"
-    system_prompt = raw.strip()
+    def _extract_json(text: str) -> str:
+        # Remove blocos de código markdown (```json ... ``` ou ``` ... ```)
+        # que alguns modelos inserem mesmo quando instruídos a não fazê-lo.
+        fenced = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL)
+        if fenced:
+            return fenced.group(1)
+        # Ou pega o primeiro objeto { ... } encontrado no texto
+        brace = re.search(r"\{.*\}", text, re.DOTALL)
+        return brace.group(0) if brace else text
 
-    if "NOME:" in raw and "PROMPT:" in raw:
-        try:
-            name_part = raw.split("NOME:", 1)[1].split("PROMPT:", 1)[0].strip()
-            prompt_part = raw.split("PROMPT:", 1)[1].strip()
-            name = name_part or name
-            system_prompt = prompt_part or system_prompt
-        except Exception:
-            pass
+    try:
+        parsed = json.loads(_extract_json(raw))
+        name = str(parsed.get("name") or "Persona personalizada").strip()
+        system_prompt = str(parsed.get("system_prompt") or raw).strip()
+    except (json.JSONDecodeError, AttributeError):
+        # Fallback: se a IA não devolveu JSON válido, usa o texto bruto
+        # como system_prompt para não perder o trabalho gerado.
+        name = "Persona personalizada"
+        system_prompt = raw.strip()
 
     return GenerateResponse(suggested_name=name, system_prompt=system_prompt)
