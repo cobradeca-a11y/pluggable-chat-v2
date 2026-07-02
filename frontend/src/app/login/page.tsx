@@ -19,6 +19,16 @@ function LoginContent() {
       const accessToken = params.get('access_token');
       if (accessToken) {
         localStorage.setItem('pluggable_auth_token', accessToken);
+        try {
+          // JWT: header.payload.signature - decodifica o payload (base64url) para extrair o "sub" (user id)
+          const payloadB64 = accessToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+          const payload = JSON.parse(atob(payloadB64));
+          if (payload.sub) {
+            localStorage.setItem('pluggable_user_id', payload.sub);
+          }
+        } catch (e) {
+          console.error('Failed to decode JWT payload', e);
+        }
         router.push('/');
       }
     }

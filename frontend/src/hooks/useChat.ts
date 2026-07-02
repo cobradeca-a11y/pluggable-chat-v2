@@ -15,7 +15,6 @@ export function useChat() {
   const [providerSettings, setProviderSettings] = useState<ProviderSettings>({
     provider: "",
     model: "",
-    apiKey: ""
   });
 
   const isSwitchingRef = useRef(false);
@@ -76,6 +75,7 @@ export function useChat() {
       if (!text.trim()) return;
 
       if (!conv.activeId) {
+        suppressNextResetRef.current = true;
         conv.createConversation();
       }
 
@@ -108,9 +108,6 @@ export function useChat() {
           const imagePayload: any = { prompt: text };
           if (providerSettings.provider) imagePayload.provider = providerSettings.provider;
           if (providerSettings.model) imagePayload.model = providerSettings.model;
-          if (providerSettings.apiKey && providerSettings.provider === 'openrouter') {
-            imagePayload.api_key = providerSettings.apiKey;
-          }
 
           const response = await fetch(`${backendUrl}/api/generate/image`, {
             method: "POST",
@@ -136,9 +133,6 @@ export function useChat() {
           const videoPayload: any = { prompt: text };
           if (providerSettings.provider) videoPayload.provider = providerSettings.provider;
           if (providerSettings.model) videoPayload.model = providerSettings.model;
-          if (providerSettings.apiKey && providerSettings.provider === 'openrouter') {
-            videoPayload.api_key = providerSettings.apiKey;
-          }
 
           const response = await fetch(`${backendUrl}/api/generate/video`, {
             method: "POST",
@@ -175,9 +169,6 @@ export function useChat() {
         }
         if (providerSettings.model) {
           payload.model = providerSettings.model;
-        }
-        if (providerSettings.apiKey && providerSettings.provider === 'openrouter') {
-          payload.api_key = providerSettings.apiKey;
         }
 
         if (stream) {
