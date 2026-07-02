@@ -82,17 +82,22 @@ export default function Home() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isSettingsOpen, isSidebarOpen, isDesktop, clearChat]);
 
+  const isProgrammaticScrollRef = useRef(false);
+
   const handleScroll = () => {
+    if (isProgrammaticScrollRef.current) return; // ignora o próprio auto-scroll
     if (mainRef.current) {
       const { scrollTop, scrollHeight, clientHeight } = mainRef.current;
-      const isAtBottom = scrollHeight - scrollTop - clientHeight < 100;
+      const isAtBottom = scrollHeight - scrollTop - clientHeight < 120;
       setIsAutoScroll(isAtBottom);
     }
   };
 
   useEffect(() => {
-    if (isAutoScroll) {
-      endOfMessagesRef.current?.scrollIntoView({ behavior: 'auto', block: 'end' });
+    if (isAutoScroll && mainRef.current) {
+      isProgrammaticScrollRef.current = true;
+      mainRef.current.scrollTop = mainRef.current.scrollHeight;
+      requestAnimationFrame(() => { isProgrammaticScrollRef.current = false; });
     }
   }, [messages, isAutoScroll]);
 
