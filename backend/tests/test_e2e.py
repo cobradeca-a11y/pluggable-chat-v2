@@ -99,67 +99,9 @@ def test_check_audio_status():
     data2 = response2.json()
     assert data2["status"] in ["completed", "processing"]
 
-# AUTH TESTS (5 testes)
-
-
-
-@patch('app.routers.auth.get_supabase')
-def test_send_magic_link_success(mock_get_supabase):
-    mock_supabase = MagicMock()
-    mock_supabase.auth.sign_in_with_otp.return_value = {"message": "ok"}
-    mock_get_supabase.return_value = mock_supabase
-    
-    response = client.post("/api/auth/send-link", json={"email": "test@example.com"})
-    assert response.status_code == 200
-    assert response.json()["status"] == "ok"
-
-@patch('app.routers.auth.get_supabase')
-def test_send_magic_link_error(mock_get_supabase):
-    mock_supabase = MagicMock()
-    mock_supabase.auth.sign_in_with_otp.side_effect = Exception("Invalid email")
-    mock_get_supabase.return_value = mock_supabase
-    
-    response = client.post("/api/auth/send-link", json={"email": "invalid"})
-    assert response.status_code == 400
-    assert "Invalid email" in response.json()["detail"]
-
-@patch('app.routers.auth.get_supabase')
-def test_verify_link_success(mock_get_supabase):
-    mock_supabase = MagicMock()
-    mock_session = MagicMock()
-    mock_session.session.access_token = "fake_token"
-    mock_session.session.user.id = "user_123"
-    mock_supabase.auth.verify_otp.return_value = mock_session
-    mock_get_supabase.return_value = mock_supabase
-    
-    response = client.post("/api/auth/verify", json={"email": "test@example.com", "token": "123456"})
-    assert response.status_code == 200
-    data = response.json()
-    assert data["status"] == "ok"
-    assert data["session"]["access_token"] == "fake_token"
-    assert data["session"]["user_id"] == "user_123"
-
-@patch('app.routers.auth.get_supabase')
-def test_verify_link_invalid(mock_get_supabase):
-    mock_supabase = MagicMock()
-    # verify_otp returns object without session
-    mock_supabase.auth.verify_otp.return_value = MagicMock(session=None)
-    mock_get_supabase.return_value = mock_supabase
-    
-    response = client.post("/api/auth/verify", json={"email": "test@example.com", "token": "wrong"})
-    assert response.status_code == 401
-    assert "Invalid session" in response.json()["detail"]
-
-@patch('app.routers.auth.get_supabase')
-def test_verify_link_exception(mock_get_supabase):
-    mock_supabase = MagicMock()
-    mock_supabase.auth.verify_otp.side_effect = Exception("Expired token")
-    mock_get_supabase.return_value = mock_supabase
-    
-    response = client.post("/api/auth/verify", json={"email": "test@example.com", "token": "123456"})
-    assert response.status_code == 401
-    assert "Expired token" in response.json()["detail"]
-
+# AUTH TESTS removidos: rotas /api/auth/send-link e /api/auth/verify
+# foram descontinuadas após a migração para Google OAuth (Supabase Auth
+# lida com o fluxo inteiro no frontend agora).
 
 
 
