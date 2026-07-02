@@ -44,7 +44,7 @@ export function ChatInput({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || loading) return;
+    if ((!input.trim() && !attachment) || loading) return;
     sendMessage(input, mode === 'text', attachment || undefined, mode);
   };
 
@@ -243,11 +243,11 @@ export function ChatInput({
         ) : (
           <button
             type="submit"
-            disabled={!input.trim()}
+            disabled={!input.trim() && !attachment}
             style={{
               width: 44, height: 44, borderRadius: 12, border: 'none',
-              backgroundColor: input.trim() ? '#2563eb' : (isDark ? '#3f3f46' : '#d4d4d8'),
-              color: 'white', cursor: input.trim() ? 'pointer' : 'not-allowed',
+              backgroundColor: (input.trim() || attachment) ? '#2563eb' : (isDark ? '#3f3f46' : '#d4d4d8'),
+              color: 'white', cursor: (input.trim() || attachment) ? 'pointer' : 'not-allowed',
               fontSize: 18,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               flexShrink: 0

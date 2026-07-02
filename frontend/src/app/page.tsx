@@ -163,6 +163,7 @@ export default function Home() {
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
+        minHeight: 0,
         marginLeft: (isSidebarOpen && isDesktop) ? 260 : 0,
         transition: 'margin-left 0.2s ease-in-out',
         width: '100%'
@@ -259,7 +260,7 @@ export default function Home() {
         </header>
 
         {/* Chat Area */}
-        <main ref={mainRef} onScroll={handleScroll} style={{ flex: 1, overflowY: 'auto', padding: '24px 20px', paddingBottom: '160px' }}>
+        <main ref={mainRef} onScroll={handleScroll} style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '24px 20px', paddingBottom: '160px' }}>
           <div style={{ maxWidth: 720, margin: '0 auto' }}>
             {messages.length === 0 ? (
               <div style={{ textAlign: 'center', marginTop: 80 }}>
