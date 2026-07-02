@@ -149,22 +149,6 @@ export function SettingsModal({ isOpen, onClose, settings, onSave }: SettingsMod
             </select>
           </div>
 
-          {localSettings.provider === 'openrouter' && (
-            <div className="space-y-1.5 animate-in slide-in-from-top-2 duration-200">
-              <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300 flex justify-between transition-colors duration-300">
-                API Key
-                <span className="text-[10px] text-emerald-600 dark:text-emerald-500 font-normal">Apenas para o Backend</span>
-              </label>
-              <input 
-                type="password"
-                value={localSettings.apiKey}
-                onChange={(e) => setLocalSettings({...localSettings, apiKey: e.target.value})}
-                placeholder="sk-or-v1-..."
-                className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors duration-300 font-mono"
-              />
-            </div>
-          )}
-
           <div className="pt-4 flex justify-end gap-3">
             <button 
               type="button"

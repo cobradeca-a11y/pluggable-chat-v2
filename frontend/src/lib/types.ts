@@ -27,7 +27,6 @@ export interface ChatResponse {
 export interface ProviderSettings {
   provider: string;
   model: string;
-  apiKey: string;
 }
 
 export interface Conversation {

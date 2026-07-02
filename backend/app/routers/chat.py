@@ -30,13 +30,7 @@ def _get_active_provider(req: Union[ChatRequest, ImageRequest]) -> LLMProvider:
     # Inject overrides dynamically
     if req.model and hasattr(provider, 'model'):
         setattr(provider, 'model', req.model)
-        
-    if req.api_key and hasattr(provider, 'api_key'):
-        setattr(provider, 'api_key', req.api_key)
-        # Specific injection for OpenRouter authorization header
-        if hasattr(provider, 'headers') and isinstance(provider.headers, dict):
-            provider.headers["Authorization"] = f"Bearer {req.api_key}"
-            
+
     return provider
 
 @router.post("/api/chat", response_model=ChatResponse)
