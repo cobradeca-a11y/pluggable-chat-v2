@@ -76,7 +76,7 @@ Capabilities: can_text=true, can_image=false, can_video=false
 Payload Format: {"model": "...", "messages": [...], "stream": false, "max_tokens": 1024}
 Response Field: data.content[0].text
 Headers: x-api-key: {key}, anthropic-version: 2023-06-01
-Notes: Suporta image input via base64
+Notes: Suporta image input via base64. Nota: can_image=false porque não gera imagens, apenas aceita imagens como anexo (visão) via supported_attachments.
 ```
 
 ### GPT-4o (OpenAI)
@@ -95,7 +95,7 @@ Capabilities: can_text=true, can_image=false, can_video=false
 Payload Format: {"model": "gpt-4o", "messages": [...], "stream": false}
 Response Field: data.choices[0].message.content
 Headers: Authorization: Bearer {key}, Content-Type: application/json
-Notes: Suporta vision (image_url ou base64)
+Notes: Suporta vision (image_url ou base64). Nota: can_image=false porque não gera imagens, apenas aceita imagens como anexo (visão) via supported_attachments.
 ```
 
 ### Gemini 1.5 Pro (Google)
