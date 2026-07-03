@@ -5,6 +5,7 @@ import remarkGfm from 'remark-gfm';
 import { useTheme } from '../hooks/useTheme';
 import { MessageBubbleImage } from './MessageBubbleImage';
 import { MessageBubbleVideo } from './MessageBubbleVideo';
+import { sanitizeMarkdown } from '../lib/sanitizeMarkdown';
 
 interface MessageBubbleProps {
   message: Message;
@@ -121,7 +122,7 @@ export function MessageBubble({ message, onRetry }: MessageBubbleProps) {
                     <a href={href} target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa', textDecoration: 'underline' }}>{children}</a>
                   ),
                 }}
-              >{message.content}</ReactMarkdown>
+              >{sanitizeMarkdown(message.content)}</ReactMarkdown>
             </div>
           )}
 
