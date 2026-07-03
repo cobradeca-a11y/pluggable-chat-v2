@@ -127,7 +127,7 @@ def test_chat_stream():
         assert "text/event-stream" in response.headers["content-type"]
         
         content = response.read().decode("utf-8")
-        assert "data: I\n\n" in content
+        assert 'data: {"delta": " I"}\n\n' in content or 'data: {"delta": "I"}\n\n' in content or 'data: {"delta": " response."}\n\n' in content
         assert "data: [DONE]\n\n" in content
 
 def test_generate_video_mock():
@@ -175,10 +175,33 @@ def test_chat_stream_error():
         ) as response:
             assert response.status_code == 200
             content = response.read().decode("utf-8")
-            assert "data: primeiro chunk" in content
+            assert 'data: {"delta": "primeiro chunk"}' in content
             assert "data: [ERROR]" in content
             assert '"provider": "mock"' in content
             assert "Erro simulado no meio do stream" in content
+
+def test_chat_stream_with_newline():
+    from core.protocol import LLMProvider
+    
+    with patch("app.routers.chat.get_provider") as mock_get_provider:
+        mock_provider_instance = MagicMock(spec=LLMProvider)
+        mock_provider_instance.model = "mock-model"
+        
+        async def fake_stream(*args, **kwargs):
+            yield "fim do paragrafo.\n\ninicio do proximo paragrafo"
+            
+        mock_provider_instance.stream = fake_stream
+        mock_provider_class = MagicMock(return_value=mock_provider_instance)
+        mock_get_provider.return_value = mock_provider_class
+        
+        with client.stream(
+            "POST",
+            "/api/chat/stream",
+            json={"messages": [{"role": "user", "content": "Olá"}], "provider": "mock"}
+        ) as response:
+            assert response.status_code == 200
+            content = response.read().decode("utf-8")
+            assert '{"delta": "fim do paragrafo.\\n\\ninicio do proximo paragrafo"}' in content
 
 def test_rate_limit():
     # Rate limit was set to 100 requests per minute.

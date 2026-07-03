@@ -260,10 +260,22 @@ export function useChat() {
                   }
 
                   // Append data to the last message (the assistant's response)
+                  let parsedDelta = "";
+                  try {
+                    const parsed = JSON.parse(data);
+                    if (parsed.delta !== undefined) {
+                      parsedDelta = parsed.delta;
+                    } else {
+                      parsedDelta = data;
+                    }
+                  } catch (e) {
+                    parsedDelta = data; // Fallback se não for JSON válido
+                  }
+
                   setMessages((prev) => {
                     const updated = [...prev];
                     const lastMessage = { ...updated[updated.length - 1] };
-                    lastMessage.content += data;
+                    lastMessage.content += parsedDelta;
                     updated[updated.length - 1] = lastMessage;
                     return updated;
                   });

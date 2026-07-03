@@ -65,8 +65,9 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
     
     async def sse_generator() -> AsyncGenerator[str, None]:
         try:
+            import json
             async for chunk in provider.stream(messages, attachment=request.attachment):
-                yield f"data: {chunk}\n\n"
+                yield f"data: {json.dumps({'delta': chunk})}\n\n"
         except NotImplementedError:
             import json
             err_payload = json.dumps({"provider": provider_name, "status": 501})
