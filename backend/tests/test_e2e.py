@@ -153,6 +153,33 @@ def test_check_video_status():
     assert data2["status"] in ["completed", "processing"]
     assert "progress" in data2
 
+def test_chat_stream_error():
+    from core.protocol import LLMProvider
+    
+    with patch("app.routers.chat.get_provider") as mock_get_provider:
+        mock_provider_instance = MagicMock(spec=LLMProvider)
+        mock_provider_instance.model = "mock-model"
+        
+        async def fake_stream(*args, **kwargs):
+            yield "primeiro chunk"
+            raise Exception("Erro simulado no meio do stream")
+            
+        mock_provider_instance.stream = fake_stream
+        mock_provider_class = MagicMock(return_value=mock_provider_instance)
+        mock_get_provider.return_value = mock_provider_class
+        
+        with client.stream(
+            "POST",
+            "/api/chat/stream",
+            json={"messages": [{"role": "user", "content": "Olá"}], "provider": "mock"}
+        ) as response:
+            assert response.status_code == 200
+            content = response.read().decode("utf-8")
+            assert "data: primeiro chunk" in content
+            assert "data: [ERROR]" in content
+            assert '"provider": "mock"' in content
+            assert "Erro simulado no meio do stream" in content
+
 def test_rate_limit():
     # Rate limit was set to 100 requests per minute.
     status_codes = []

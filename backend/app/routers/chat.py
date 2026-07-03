@@ -47,21 +47,31 @@ async def chat(request: ChatRequest) -> ChatResponse:
 @router.post("/api/chat/stream")
 async def chat_stream(request: ChatRequest) -> StreamingResponse:
     provider = _get_active_provider(request)
+    provider_name = request.provider or settings.LLM_PROVIDER
     
     async def sse_generator() -> AsyncGenerator[str, None]:
         try:
             async for chunk in provider.stream(request.messages, attachment=request.attachment):
                 yield f"data: {chunk}\n\n"
         except NotImplementedError:
-            yield "data: [ERROR] Provider não suporta geração de texto (stream)\n\n"
+            import json
+            err_payload = json.dumps({"provider": provider_name, "status": 501})
+            yield f"data: [ERROR] {err_payload}\n\n"
         except httpx.HTTPStatusError as e:
-            try:
-                body = e.response.json()
-            except Exception:
-                body = e.response.text[:200]
-            yield f"data: [ERROR] HTTP {e.response.status_code}: {body}\n\n"
+            import json
+            err_payload = json.dumps({
+                "provider": provider_name,
+                "status": e.response.status_code
+            })
+            yield f"data: [ERROR] {err_payload}\n\n"
         except Exception as e:
-            yield f"data: [ERROR] {str(e)[:200]}\n\n"
+            import json
+            err_payload = json.dumps({
+                "provider": provider_name,
+                "status": 0,
+                "error": str(e)[:200]
+            })
+            yield f"data: [ERROR] {err_payload}\n\n"
         yield "data: [DONE]\n\n"
         
     return StreamingResponse(sse_generator(), media_type="text/event-stream")
