@@ -13,8 +13,8 @@ export function useChat() {
   const abortControllerRef = useRef<AbortController | null>(null);
   const [toast, setToast] = useState<{message: string, type: 'success' | 'error'} | null>(null);
   const [providerSettings, setProviderSettings] = useState<ProviderSettings>({
-    provider: "",
-    model: "",
+    provider: "gemini",
+    model: "gemini-3.5-flash",
   });
 
   const isSwitchingRef = useRef(false);
@@ -52,7 +52,10 @@ export function useChat() {
     try {
       const storedSettings = localStorage.getItem("pluggable_chat_settings");
       if (storedSettings) {
-        setProviderSettings(JSON.parse(storedSettings));
+        const parsed = JSON.parse(storedSettings);
+        if (parsed.provider) {
+          setProviderSettings(parsed);
+        }
       }
     } catch (e) {
       console.error("Failed to parse settings", e);
