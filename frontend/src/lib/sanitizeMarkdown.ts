@@ -59,12 +59,19 @@ export function sanitizeMarkdown(text: string): string {
     }
   }
 
-  let sanitized = tokens.map(t => t.content).join('');
-
   // Balanceia ** órfãos
   if (boldCount % 2 !== 0) {
-    sanitized += '**';
+    // Procura o último token de texto que contém '**' e remove sua última ocorrência
+    for (let i = tokens.length - 1; i >= 0; i--) {
+      if (tokens[i].type === 'text' && tokens[i].content.includes('**')) {
+        const lastIndex = tokens[i].content.lastIndexOf('**');
+        tokens[i].content = tokens[i].content.substring(0, lastIndex) + tokens[i].content.substring(lastIndex + 2);
+        break; // Removemos apenas 1 (o órfão), então podemos sair do loop
+      }
+    }
   }
+
+  let sanitized = tokens.map(t => t.content).join('');
 
   return sanitized;
 }
