@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 
 export function useAvailableModels(provider: string) {
   const [models, setModels] = useState<string[]>([]);
+  const [categories, setCategories] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!provider) {
       setModels([]);
+      setCategories({});
       return;
     }
 
@@ -19,12 +21,14 @@ export function useAvailableModels(provider: string) {
       .then(data => {
         if (isMounted) {
           setModels(data.models || []);
+          setCategories(data.categories || {});
         }
       })
       .catch(err => {
         console.error(`Erro ao buscar modelos de ${provider}:`, err);
         if (isMounted) {
           setModels([]);
+          setCategories({});
         }
       })
       .finally(() => {
@@ -38,5 +42,5 @@ export function useAvailableModels(provider: string) {
     };
   }, [provider]);
 
-  return { models, loading };
+  return { models, categories, loading };
 }

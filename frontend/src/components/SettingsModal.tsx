@@ -12,7 +12,8 @@ interface SettingsModalProps {
 export function SettingsModal({ isOpen, onClose, settings, onSave }: SettingsModalProps) {
   const [localSettings, setLocalSettings] = useState<ProviderSettings>(settings);
   const [providers, setProviders] = useState<any[]>([]);
-  const { models: availableModels, loading: modelsLoading } = useAvailableModels(localSettings.provider);
+  const [selectedCategory, setSelectedCategory] = useState<string>("Todas");
+  const { models: availableModels, categories, loading: modelsLoading } = useAvailableModels(localSettings.provider);
 
   useEffect(() => {
     if (isOpen) {
@@ -63,7 +64,23 @@ export function SettingsModal({ isOpen, onClose, settings, onSave }: SettingsMod
     }
 
     setLocalSettings({ ...localSettings, provider, model: defaultModel });
+    setSelectedCategory("Todas");
   };
+
+  // Processa categorias disponíveis para o provider atual
+  const allCategories = new Set<string>();
+  availableModels.forEach(m => {
+    if (categories[m]) {
+      categories[m].forEach(c => allCategories.add(c));
+    }
+  });
+  const categoryList = ["Todas", ...Array.from(allCategories).sort()];
+
+  // Filtra modelos pela categoria selecionada
+  const filteredModels = availableModels.filter(m => {
+    if (selectedCategory === "Todas") return true;
+    return categories[m]?.includes(selectedCategory);
+  });
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
@@ -131,16 +148,38 @@ export function SettingsModal({ isOpen, onClose, settings, onSave }: SettingsMod
             </select>
           </div>
 
+          {categoryList.length > 1 && (
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300 transition-colors duration-300">Categoria de Tarefa</label>
+              <select 
+                value={selectedCategory}
+                onChange={(e) => {
+                  setSelectedCategory(e.target.value);
+                  // Opcional: auto-selecionar o primeiro modelo da nova categoria
+                  const newFiltered = availableModels.filter(m => e.target.value === "Todas" || categories[m]?.includes(e.target.value));
+                  if (newFiltered.length > 0 && !newFiltered.includes(localSettings.model)) {
+                    setLocalSettings(prev => ({ ...prev, model: newFiltered[0] }));
+                  }
+                }}
+                className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors duration-300"
+              >
+                {categoryList.map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300 transition-colors duration-300">Model</label>
+            <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300 transition-colors duration-300">Modelo</label>
             <select 
               value={localSettings.model}
               onChange={(e) => setLocalSettings({...localSettings, model: e.target.value})}
-              disabled={modelsLoading || availableModels.length === 0}
+              disabled={modelsLoading || filteredModels.length === 0}
               className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors duration-300"
             >
-              {availableModels.length > 0 ? (
-                availableModels.map(m => (
+              {filteredModels.length > 0 ? (
+                filteredModels.map(m => (
                   <option key={m} value={m}>{m}</option>
                 ))
               ) : (
