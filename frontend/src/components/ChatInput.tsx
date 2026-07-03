@@ -26,6 +26,8 @@ export function ChatInput({
   const isDark = theme === 'dark';
   const [mode, setMode] = useState<'text' | 'image' | 'video'>('text');
   
+  const [userSelectedMode, setUserSelectedMode] = useState<'text' | 'image' | 'video' | null>(null);
+  
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -41,6 +43,26 @@ export function ChatInput({
       if (mode === 'text' && !providerCapabilities.canText && providerCapabilities.canImage) setMode('image');
     }
   }, [providerCapabilities]);
+
+  // Efeito de auto-detecção heurística
+  useEffect(() => {
+    if (providerCapabilities) {
+      const detected = detectMode(input, attachment);
+      // Se o usuário não clicou manualmente recentemente, aplicamos a heurística (caso o provider suporte)
+      if (!userSelectedMode) {
+        if (detected === 'image' && providerCapabilities.canImage) setMode('image');
+        else if (detected === 'video' && providerCapabilities.canVideo) setMode('video');
+        else if (detected === 'text' && providerCapabilities.canText) setMode('text');
+      }
+    }
+  }, [input, attachment, providerCapabilities, userSelectedMode]);
+
+  // Se o input esvaziar (mensagem enviada), resetamos a escolha manual para permitir auto-detecção novamente
+  useEffect(() => {
+    if (!input.trim() && !attachment) {
+      setUserSelectedMode(null);
+    }
+  }, [input, attachment]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,11 +123,12 @@ export function ChatInput({
           {providerCapabilities?.canText && (
             <button 
               type="button" 
-              onClick={() => setMode('text')}
+              onClick={() => { setMode('text'); setUserSelectedMode('text'); }}
               style={{ 
                 padding: '4px 12px', borderRadius: 12, fontSize: 12, cursor: 'pointer', border: 'none',
                 backgroundColor: mode === 'text' ? '#2563eb' : (isDark ? '#27272a' : '#e4e4e7'),
-                color: mode === 'text' ? '#ffffff' : (isDark ? '#a1a1aa' : '#52525b')
+                color: mode === 'text' ? '#ffffff' : (isDark ? '#a1a1aa' : '#52525b'),
+                transition: 'background-color 0.2s'
               }}
             >
               Texto
@@ -114,11 +137,12 @@ export function ChatInput({
           {providerCapabilities?.canImage && (
             <button 
               type="button" 
-              onClick={() => setMode('image')}
+              onClick={() => { setMode('image'); setUserSelectedMode('image'); }}
               style={{ 
                 padding: '4px 12px', borderRadius: 12, fontSize: 12, cursor: 'pointer', border: 'none',
                 backgroundColor: mode === 'image' ? '#2563eb' : (isDark ? '#27272a' : '#e4e4e7'),
-                color: mode === 'image' ? '#ffffff' : (isDark ? '#a1a1aa' : '#52525b')
+                color: mode === 'image' ? '#ffffff' : (isDark ? '#a1a1aa' : '#52525b'),
+                transition: 'background-color 0.2s'
               }}
             >
               Imagem
@@ -127,11 +151,12 @@ export function ChatInput({
           {providerCapabilities?.canVideo && (
             <button 
               type="button" 
-              onClick={() => setMode('video')}
+              onClick={() => { setMode('video'); setUserSelectedMode('video'); }}
               style={{ 
                 padding: '4px 12px', borderRadius: 12, fontSize: 12, cursor: 'pointer', border: 'none',
                 backgroundColor: mode === 'video' ? '#2563eb' : (isDark ? '#27272a' : '#e4e4e7'),
-                color: mode === 'video' ? '#ffffff' : (isDark ? '#a1a1aa' : '#52525b')
+                color: mode === 'video' ? '#ffffff' : (isDark ? '#a1a1aa' : '#52525b'),
+                transition: 'background-color 0.2s'
               }}
             >
               Vídeo
