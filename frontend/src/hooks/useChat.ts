@@ -200,16 +200,25 @@ export function useChat() {
           const reader = response.body.getReader();
           const decoder = new TextDecoder("utf-8");
           let done = false;
+          let buffer = "";
 
           while (!done) {
             const { value, done: readerDone } = await reader.read();
             done = readerDone;
 
             if (value) {
-              const chunk = decoder.decode(value, { stream: true });
-              const lines = chunk.split("\n");
+              buffer += decoder.decode(value, { stream: true });
+            }
 
-              for (const line of lines) {
+            const lines = buffer.split("\n");
+            
+            if (!done) {
+              buffer = lines.pop() || "";
+            } else {
+              buffer = "";
+            }
+
+            for (const line of lines) {
                 if (line.startsWith("data: ")) {
                   const data = line.slice(6);
                   if (data.trim() === "[DONE]") {
@@ -261,7 +270,6 @@ export function useChat() {
                 }
               }
             }
-          }
         } else {
           // Fallback synchronous approach
           const response = await fetch(`${backendUrl}${endpoint}`, {
