@@ -8,7 +8,6 @@ import { TypingIndicator } from '../components/TypingIndicator';
 import { Toast } from '../components/Toast';
 import { SettingsModal } from '../components/SettingsModal';
 import { Sidebar } from '../components/Sidebar';
-import { PersonaSelector } from '../components/PersonaSelector';
 import { useTheme } from '../hooks/useTheme';
 import { useActiveModel } from '../hooks/useActiveModel';
 import { Attachment } from '../lib/types';
@@ -155,6 +154,7 @@ export default function Home() {
         onRename={conversations.renameConversation}
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
+        personasHook={personas}
       />
 
       {/* Main Content Area */}
@@ -307,7 +307,6 @@ export default function Home() {
               onAttach={handleAttach}
               onAttachError={(msg) => showToast(msg, 'error')}
               providerCapabilities={{ canText, canImage, canVideo }}
-              personaSelector={<PersonaSelector personasHook={personas} />}
             />
             <div style={{ textAlign: 'center', marginTop: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
               <span style={{ fontSize: 10, color: '#52525b', textTransform: 'uppercase', letterSpacing: 1 }}>

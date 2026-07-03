@@ -12,15 +12,23 @@ interface SidebarProps {
   onRename: (id: string, title: string) => void;
   isOpen: boolean;
   onClose: () => void;
+  personasHook?: any; // Recebe o retorno do usePersonas
 }
 
-export function Sidebar({ conversations, activeId, onSelect, onNew, onDelete, onRename, isOpen, onClose }: SidebarProps) {
+export function Sidebar({ conversations, activeId, onSelect, onNew, onDelete, onRename, isOpen, onClose, personasHook }: SidebarProps) {
   const { theme } = useTheme();
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState<'conversations' | 'personas'>('conversations');
+  const [isCreatingPersona, setIsCreatingPersona] = useState(false);
+  const [personaDescription, setPersonaDescription] = useState('');
+  const [isGeneratingPersona, setIsGeneratingPersona] = useState(false);
+  const [previewPersona, setPreviewPersona] = useState<{ suggested_name: string; system_prompt: string } | null>(null);
+  const [personaNameOverride, setPersonaNameOverride] = useState('');
+  
   const menuRef = useRef<HTMLDivElement>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
 
@@ -93,52 +101,81 @@ export function Sidebar({ conversations, activeId, onSelect, onNew, onDelete, on
         transition: 'transform 0.2s ease-in-out',
         zIndex: 50, display: 'flex', flexDirection: 'column'
       }}>
-        {/* Header */}
-        <div style={{ padding: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        {/* Tabs */}
+        <div style={{ display: 'flex', borderBottom: isDark ? '1px solid #27272a' : '1px solid #e4e4e7' }}>
           <button
-            onClick={onNew}
+            onClick={() => setActiveTab('conversations')}
             style={{
-              flex: 1, padding: '8px 12px', borderRadius: 8, border: 'none',
-              backgroundColor: isDark ? '#27272a' : '#f4f4f5',
-              color: isDark ? '#f4f4f5' : '#18181b',
-              cursor: 'pointer', fontWeight: 500,
-              display: 'flex', alignItems: 'center', gap: 8
+              flex: 1, padding: '12px 0', border: 'none', background: 'transparent', cursor: 'pointer',
+              fontSize: 13, fontWeight: activeTab === 'conversations' ? 600 : 400,
+              color: activeTab === 'conversations' ? (isDark ? '#f4f4f5' : '#18181b') : '#71717a',
+              borderBottom: activeTab === 'conversations' ? '2px solid #2563eb' : '2px solid transparent',
             }}
           >
-            <span>+</span> Nova Conversa
+            Conversas
           </button>
           <button
-            onClick={onClose}
-            style={{ marginLeft: 12, padding: 8, background: 'transparent', border: 'none', color: '#71717a', cursor: 'pointer' }}
+            onClick={() => setActiveTab('personas')}
+            style={{
+              flex: 1, padding: '12px 0', border: 'none', background: 'transparent', cursor: 'pointer',
+              fontSize: 13, fontWeight: activeTab === 'personas' ? 600 : 400,
+              color: activeTab === 'personas' ? (isDark ? '#f4f4f5' : '#18181b') : '#71717a',
+              borderBottom: activeTab === 'personas' ? '2px solid #2563eb' : '2px solid transparent',
+            }}
           >
-            ✕
+            Personas
           </button>
         </div>
 
-        {/* Busca */}
-        <div style={{ padding: '0 16px 12px' }}>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Buscar conversas..."
-            style={{
-              width: '100%', padding: '8px 12px', borderRadius: 8,
-              border: isDark ? '1px solid #27272a' : '1px solid #e4e4e7',
-              backgroundColor: isDark ? '#18181b' : '#ffffff',
-              color: isDark ? '#f4f4f5' : '#18181b',
-              fontSize: 13, outline: 'none',
-              boxSizing: 'border-box'
-            }}
-          />
-        </div>
-
-        {/* Lista */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '0 12px 16px' }}>
-          {filteredConversations.length === 0 ? (
-            <div style={{ textAlign: 'center', marginTop: 40, color: '#71717a', fontSize: 13 }}>
-              {searchQuery.trim() ? 'Nenhuma conversa encontrada.' : 'Nenhuma conversa ainda.'}
+        {/* Conteúdo da aba selecionada */}
+        {activeTab === 'conversations' ? (
+          <>
+            {/* Header Conversas */}
+            <div style={{ padding: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <button
+                onClick={onNew}
+                style={{
+                  flex: 1, padding: '8px 12px', borderRadius: 8, border: 'none',
+                  backgroundColor: isDark ? '#27272a' : '#f4f4f5',
+                  color: isDark ? '#f4f4f5' : '#18181b',
+                  cursor: 'pointer', fontWeight: 500,
+                  display: 'flex', alignItems: 'center', gap: 8
+                }}
+              >
+                <span>+</span> Nova Conversa
+              </button>
+              <button
+                onClick={onClose}
+                style={{ marginLeft: 12, padding: 8, background: 'transparent', border: 'none', color: '#71717a', cursor: 'pointer', display: window.innerWidth < 768 ? 'block' : 'none' }}
+              >
+                ✕
+              </button>
             </div>
+
+            {/* Busca */}
+            <div style={{ padding: '0 16px 12px' }}>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Buscar conversas..."
+                style={{
+                  width: '100%', padding: '8px 12px', borderRadius: 8,
+                  border: isDark ? '1px solid #27272a' : '1px solid #e4e4e7',
+                  backgroundColor: isDark ? '#18181b' : '#ffffff',
+                  color: isDark ? '#f4f4f5' : '#18181b',
+                  fontSize: 13, outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+
+            {/* Lista Conversas */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '0 12px 16px' }}>
+              {filteredConversations.length === 0 ? (
+                <div style={{ textAlign: 'center', marginTop: 40, color: '#71717a', fontSize: 13 }}>
+                  {searchQuery.trim() ? 'Nenhuma conversa encontrada.' : 'Nenhuma conversa ainda.'}
+                </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               {filteredConversations.map(conv => (
@@ -294,7 +331,200 @@ export function Sidebar({ conversations, activeId, onSelect, onNew, onDelete, on
             </div>
           )}
         </div>
+      </>
+    ) : (
+          <div style={{ flex: 1, overflowY: 'auto', padding: '16px 12px' }}>
+            <div style={{ padding: '0 4px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: isDark ? '#f4f4f5' : '#18181b' }}>Minhas Personas</span>
+              <button
+                onClick={() => setIsCreatingPersona(true)}
+                style={{
+                  background: 'transparent', border: 'none', color: '#2563eb',
+                  cursor: 'pointer', fontSize: 13, fontWeight: 500, padding: 0
+                }}
+              >
+                + Nova
+              </button>
+            </div>
+            
+            {personasHook?.personas.length === 0 ? (
+              <div style={{ textAlign: 'center', marginTop: 40, color: '#71717a', fontSize: 13 }}>
+                Você ainda não criou nenhuma persona.
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {personasHook?.personas.map((p: any) => (
+                  <div
+                    key={p.id}
+                    style={{
+                      padding: '12px', borderRadius: 8, cursor: 'pointer',
+                      border: isDark ? '1px solid #27272a' : '1px solid #e4e4e7',
+                      backgroundColor: personasHook.activePersonaId === p.id
+                        ? (isDark ? '#27272a' : '#e4e4e7')
+                        : (isDark ? '#18181b' : '#ffffff'),
+                    }}
+                    onClick={() => personasHook.selectPersona(p.id)}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: isDark ? '#f4f4f5' : '#18181b' }}>{p.name}</span>
+                      {personasHook.activePersonaId === p.id && (
+                        <span style={{ fontSize: 10, backgroundColor: '#2563eb', color: '#fff', padding: '2px 6px', borderRadius: 12 }}>Ativa</span>
+                      )}
+                    </div>
+                    <p style={{ fontSize: 12, color: '#71717a', margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                      {p.system_prompt}
+                    </p>
+                    <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm('Deseja realmente excluir esta persona?')) {
+                            personasHook.deletePersona(p.id);
+                          }
+                        }}
+                        style={{
+                          background: 'transparent', border: 'none', color: '#dc2626',
+                          cursor: 'pointer', fontSize: 12, padding: 0
+                        }}
+                      >
+                        Excluir
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
+
+      {/* Modal de Nova Persona */}
+      {isCreatingPersona && (
+        <div
+          onClick={() => setIsCreatingPersona(false)}
+          style={{
+            position: 'fixed', inset: 0,
+            backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
+            zIndex: 200, display: 'flex',
+            alignItems: 'center', justifyContent: 'center', padding: 16
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: isDark ? '#18181b' : '#ffffff',
+              border: isDark ? '1px solid #27272a' : '1px solid #e4e4e7',
+              borderRadius: 16, padding: 24, width: '100%', maxWidth: 450,
+              boxShadow: '0 8px 32px rgba(0,0,0,0.3)'
+            }}
+          >
+            <h3 style={{ margin: '0 0 16px', fontSize: 18, fontWeight: 600, color: isDark ? '#f4f4f5' : '#18181b' }}>
+              Criar Nova Persona
+            </h3>
+
+            {!previewPersona ? (
+              <>
+                <p style={{ fontSize: 13, color: '#71717a', marginBottom: 12 }}>
+                  Descreva o papel, especialidade ou tom de voz que você precisa:
+                </p>
+                <textarea
+                  value={personaDescription}
+                  onChange={(e) => setPersonaDescription(e.target.value)}
+                  rows={4}
+                  style={{
+                    width: '100%', padding: '12px', borderRadius: 12,
+                    border: isDark ? '1px solid #3f3f46' : '1px solid #d4d4d8',
+                    backgroundColor: isDark ? '#09090b' : '#fafafa',
+                    color: isDark ? '#f4f4f5' : '#18181b',
+                    fontSize: 14, resize: 'none', outline: 'none', boxSizing: 'border-box'
+                  }}
+                  placeholder="Ex: Você é um revisor de código sênior focado em performance..."
+                />
+                <button
+                  onClick={async () => {
+                    if (!personaDescription.trim() || !personasHook) return;
+                    setIsGeneratingPersona(true);
+                    const result = await personasHook.generatePersona(personaDescription);
+                    setIsGeneratingPersona(false);
+                    if (result) {
+                      setPreviewPersona(result);
+                      setPersonaNameOverride(result.suggested_name);
+                    }
+                  }}
+                  disabled={isGeneratingPersona || !personaDescription.trim()}
+                  style={{
+                    width: '100%', padding: '12px', marginTop: 16, borderRadius: 12, border: 'none',
+                    backgroundColor: '#2563eb', color: '#fff', fontSize: 14, fontWeight: 600,
+                    cursor: (isGeneratingPersona || !personaDescription.trim()) ? 'not-allowed' : 'pointer',
+                    opacity: (isGeneratingPersona || !personaDescription.trim()) ? 0.7 : 1
+                  }}
+                >
+                  {isGeneratingPersona ? 'Gerando inteligência...' : 'Gerar Persona com IA'}
+                </button>
+              </>
+            ) : (
+              <>
+                <label style={{ display: 'block', fontSize: 12, color: '#71717a', marginBottom: 6 }}>Nome da Persona</label>
+                <input
+                  value={personaNameOverride}
+                  onChange={(e) => setPersonaNameOverride(e.target.value)}
+                  style={{
+                    width: '100%', padding: '10px 12px', borderRadius: 8, marginBottom: 16,
+                    border: isDark ? '1px solid #3f3f46' : '1px solid #d4d4d8',
+                    backgroundColor: isDark ? '#09090b' : '#fafafa',
+                    color: isDark ? '#f4f4f5' : '#18181b',
+                    fontSize: 14, outline: 'none', boxSizing: 'border-box'
+                  }}
+                />
+                <label style={{ display: 'block', fontSize: 12, color: '#71717a', marginBottom: 6 }}>System Prompt</label>
+                <textarea
+                  value={previewPersona.system_prompt}
+                  onChange={(e) => setPreviewPersona({ ...previewPersona, system_prompt: e.target.value })}
+                  rows={6}
+                  style={{
+                    width: '100%', padding: '12px', borderRadius: 8,
+                    border: isDark ? '1px solid #3f3f46' : '1px solid #d4d4d8',
+                    backgroundColor: isDark ? '#09090b' : '#fafafa',
+                    color: isDark ? '#f4f4f5' : '#18181b',
+                    fontSize: 13, resize: 'vertical', outline: 'none', boxSizing: 'border-box'
+                  }}
+                />
+                <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
+                  <button
+                    onClick={() => setPreviewPersona(null)}
+                    style={{
+                      flex: 1, padding: '10px', borderRadius: 8, border: isDark ? '1px solid #3f3f46' : '1px solid #d4d4d8',
+                      backgroundColor: 'transparent', color: isDark ? '#f4f4f5' : '#18181b',
+                      cursor: 'pointer', fontSize: 14, fontWeight: 500
+                    }}
+                  >
+                    Voltar
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (!personasHook || !previewPersona) return;
+                      const p = await personasHook.savePersona(personaNameOverride || previewPersona.suggested_name, previewPersona.system_prompt);
+                      if (p) {
+                        personasHook.selectPersona(p.id);
+                        setIsCreatingPersona(false);
+                        setPreviewPersona(null);
+                        setPersonaDescription("");
+                      }
+                    }}
+                    style={{
+                      flex: 1, padding: '10px', borderRadius: 8, border: 'none',
+                      backgroundColor: '#2563eb', color: '#fff',
+                      cursor: 'pointer', fontSize: 14, fontWeight: 600
+                    }}
+                  >
+                    Salvar Persona
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Modal de confirmação */}
       {confirmId && (

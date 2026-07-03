@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Attachment } from '../lib/types';
 import { useTheme } from '../hooks/useTheme';
+import { detectMode } from '../lib/detectMode';
 
 interface ChatInputProps {
   input: string;
