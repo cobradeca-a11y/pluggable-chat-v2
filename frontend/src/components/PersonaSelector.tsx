@@ -42,7 +42,7 @@ export function PersonaSelector({ personasHook }: PersonaSelectorProps) {
         onChange={(e) => selectPersona(e.target.value)}
         className="text-xs bg-zinc-800 text-zinc-200 border border-zinc-700 rounded-md px-2 py-1"
       >
-        <option value="">Sem persona</option>
+        <option value="">Nenhuma (modelo padrão)</option>
         {personas.map((p: Persona) => (
           <option key={p.id} value={p.id}>{p.name}</option>
         ))}

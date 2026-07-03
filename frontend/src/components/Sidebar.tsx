@@ -349,11 +349,53 @@ export function Sidebar({ conversations, activeId, onSelect, onNew, onDelete, on
             </div>
             
             {personasHook?.personas.length === 0 ? (
-              <div style={{ textAlign: 'center', marginTop: 40, color: '#71717a', fontSize: 13 }}>
-                Você ainda não criou nenhuma persona.
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div
+                    style={{
+                      padding: '12px', borderRadius: 8, cursor: 'pointer',
+                      border: isDark ? '1px solid #27272a' : '1px solid #e4e4e7',
+                      backgroundColor: personasHook.activePersonaId === ""
+                        ? (isDark ? '#27272a' : '#e4e4e7')
+                        : (isDark ? '#18181b' : '#ffffff'),
+                    }}
+                    onClick={() => personasHook.selectPersona("")}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: isDark ? '#f4f4f5' : '#18181b' }}>Nenhuma (modelo padrão)</span>
+                      {personasHook.activePersonaId === "" && (
+                        <span style={{ fontSize: 10, backgroundColor: '#2563eb', color: '#fff', padding: '2px 6px', borderRadius: 12 }}>Ativa</span>
+                      )}
+                    </div>
+                    <p style={{ fontSize: 12, color: '#71717a', margin: '4px 0 0', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                      Respostas padrão da inteligência artificial sem nenhum escopo de persona forçado.
+                    </p>
+                </div>
+                <div style={{ textAlign: 'center', marginTop: 40, color: '#71717a', fontSize: 13 }}>
+                  Você ainda não criou nenhuma persona personalizada.
+                </div>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div
+                    style={{
+                      padding: '12px', borderRadius: 8, cursor: 'pointer',
+                      border: isDark ? '1px solid #27272a' : '1px solid #e4e4e7',
+                      backgroundColor: personasHook.activePersonaId === ""
+                        ? (isDark ? '#27272a' : '#e4e4e7')
+                        : (isDark ? '#18181b' : '#ffffff'),
+                    }}
+                    onClick={() => personasHook.selectPersona("")}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: isDark ? '#f4f4f5' : '#18181b' }}>Nenhuma (modelo padrão)</span>
+                      {personasHook.activePersonaId === "" && (
+                        <span style={{ fontSize: 10, backgroundColor: '#2563eb', color: '#fff', padding: '2px 6px', borderRadius: 12 }}>Ativa</span>
+                      )}
+                    </div>
+                    <p style={{ fontSize: 12, color: '#71717a', margin: '4px 0 0', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                      Respostas padrão da inteligência artificial sem nenhum escopo de persona forçado.
+                    </p>
+                </div>
                 {personasHook?.personas.map((p: any) => (
                   <div
                     key={p.id}
