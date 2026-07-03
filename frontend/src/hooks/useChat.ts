@@ -117,7 +117,9 @@ export function useChat() {
           });
 
           if (!response.ok) {
-            throw new Error(`Error: ${response.status} - ${response.statusText}`);
+            const err = new Error(`HTTP_ERROR_${response.status}`);
+            (err as any).status = response.status;
+            throw err;
           }
 
           const data = await response.json();
@@ -142,7 +144,9 @@ export function useChat() {
           });
 
           if (!response.ok) {
-            throw new Error(`Error: ${response.status} - ${response.statusText}`);
+            const err = new Error(`HTTP_ERROR_${response.status}`);
+            (err as any).status = response.status;
+            throw err;
           }
 
           const data = await response.json();
@@ -181,7 +185,9 @@ export function useChat() {
           });
 
           if (!response.ok) {
-            throw new Error(`Error: ${response.status} - ${response.statusText}`);
+            const err = new Error(`HTTP_ERROR_${response.status}`);
+            (err as any).status = response.status;
+            throw err;
           }
 
           if (!response.body) {
@@ -207,6 +213,40 @@ export function useChat() {
                     break;
                   }
 
+                  if (data.startsWith("[ERROR]")) {
+                    const errPayload = data.replace("[ERROR]", "").trim();
+                    let friendlyMsg = "Ocorreu um erro inesperado.";
+                    try {
+                      const parsed = JSON.parse(errPayload);
+                      const provider = parsed.provider || providerSettings.provider || "provedor";
+                      const status = parsed.status;
+                      
+                      if (status === 401 || status === 403) {
+                         friendlyMsg = `Falha de autenticação no ${provider}. Verifique sua chave de API nas configurações.`;
+                      } else if (status === 429) {
+                         friendlyMsg = `Limite de requisições excedido no ${provider} (Rate Limit). Tente novamente em alguns instantes.`;
+                      } else if (status === 0 || status === 504) {
+                         friendlyMsg = `O ${provider} demorou muito para responder (Timeout) ou ocorreu falha de rede. Tente novamente.`;
+                      } else if (status >= 500) {
+                         friendlyMsg = `O ${provider} retornou um erro interno (${status}). Tente novamente ou mude de modelo.`;
+                      } else {
+                         friendlyMsg = `O ${provider} retornou um erro inesperado (${status}).`;
+                      }
+                    } catch(e) {
+                      friendlyMsg = "Falha ao processar a resposta do provedor.";
+                    }
+                    
+                    setMessages((prev) => {
+                      const updated = [...prev];
+                      const lastMessage = { ...updated[updated.length - 1] };
+                      lastMessage.content = friendlyMsg;
+                      lastMessage.isError = true;
+                      updated[updated.length - 1] = lastMessage;
+                      return updated;
+                    });
+                    continue;
+                  }
+
                   // Append data to the last message (the assistant's response)
                   setMessages((prev) => {
                     const updated = [...prev];
@@ -228,7 +268,9 @@ export function useChat() {
           });
 
           if (!response.ok) {
-            throw new Error(`Error: ${response.status} - ${response.statusText}`);
+            const err = new Error(`HTTP_ERROR_${response.status}`);
+            (err as any).status = response.status;
+            throw err;
           }
 
           const data = await response.json();
@@ -245,14 +287,30 @@ export function useChat() {
         }
         console.error("Failed to send message:", error);
         
+        let friendlyMsg = "Ocorreu um erro ao comunicar com o servidor. Verifique se o provedor está ativo.";
+        const provider = providerSettings.provider || "provedor";
+
+        if (error.status) {
+           const status = error.status;
+           if (status === 401 || status === 403) {
+             friendlyMsg = `Falha de autenticação no ${provider}. Verifique sua chave de API nas configurações.`;
+           } else if (status === 429) {
+             friendlyMsg = `Limite de requisições excedido no ${provider} (Rate Limit). Tente novamente em alguns instantes.`;
+           } else if (status >= 500) {
+             friendlyMsg = `O ${provider} retornou um erro interno (${status}). Tente novamente ou mude de modelo.`;
+           } else {
+             friendlyMsg = `O ${provider} retornou um erro inesperado (${status}).`;
+           }
+        } else if (error.message && (error.message.includes('fetch') || error.message.includes('Network'))) {
+           friendlyMsg = "Falha de rede ou servidor inacessível. Verifique sua conexão.";
+        }
+
         setMessages((prev) => {
           const updated = [...prev];
           const lastMsg = updated[updated.length - 1];
           if (lastMsg && lastMsg.role === 'assistant') {
             lastMsg.isError = true;
-            if (!lastMsg.content) {
-              lastMsg.content = "Ocorreu um erro ao comunicar com o servidor. Verifique se o provedor está ativo.";
-            }
+            lastMsg.content = friendlyMsg;
           }
           return updated;
         });
