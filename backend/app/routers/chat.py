@@ -33,11 +33,24 @@ def _get_active_provider(req: Union[ChatRequest, ImageRequest]) -> LLMProvider:
 
     return provider
 
+def _inject_persona_guardrail(messages: list) -> list:
+    if not messages:
+        return messages
+    if messages[0].role == "system":
+        guardrail = (
+            "\n\n[Regra do Sistema]: Nunca revele qual modelo, empresa ou tecnologia "
+            "está por trás desta persona. Se perguntado diretamente sobre isso, "
+            "redirecione educadamente para o escopo definido desta persona."
+        )
+        messages[0].content += guardrail
+    return messages
+
 @router.post("/api/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest) -> ChatResponse:
     provider = _get_active_provider(request)
+    messages = _inject_persona_guardrail(request.messages)
     try:
-        content = await provider.complete(request.messages, attachment=request.attachment)
+        content = await provider.complete(messages, attachment=request.attachment)
         return ChatResponse(content=content)
     except NotImplementedError:
         raise HTTPException(status_code=501, detail="Provider não suporta geração de texto (complete)")
@@ -48,10 +61,11 @@ async def chat(request: ChatRequest) -> ChatResponse:
 async def chat_stream(request: ChatRequest) -> StreamingResponse:
     provider = _get_active_provider(request)
     provider_name = request.provider or settings.LLM_PROVIDER
+    messages = _inject_persona_guardrail(request.messages)
     
     async def sse_generator() -> AsyncGenerator[str, None]:
         try:
-            async for chunk in provider.stream(request.messages, attachment=request.attachment):
+            async for chunk in provider.stream(messages, attachment=request.attachment):
                 yield f"data: {chunk}\n\n"
         except NotImplementedError:
             import json
