@@ -28,6 +28,7 @@ export function Sidebar({ conversations, activeId, onSelect, onNew, onDelete, on
   const [isGeneratingPersona, setIsGeneratingPersona] = useState(false);
   const [previewPersona, setPreviewPersona] = useState<{ suggested_name: string; system_prompt: string } | null>(null);
   const [personaNameOverride, setPersonaNameOverride] = useState('');
+  const [isSavingPersona, setIsSavingPersona] = useState(false);
   
   const menuRef = useRef<HTMLDivElement>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
@@ -502,8 +503,10 @@ export function Sidebar({ conversations, activeId, onSelect, onNew, onDelete, on
                   </button>
                   <button
                     onClick={async () => {
-                      if (!personasHook || !previewPersona) return;
+                      if (!personasHook || !previewPersona || isSavingPersona) return;
+                      setIsSavingPersona(true);
                       const p = await personasHook.savePersona(personaNameOverride || previewPersona.suggested_name, previewPersona.system_prompt);
+                      setIsSavingPersona(false);
                       if (p) {
                         personasHook.selectPersona(p.id);
                         setIsCreatingPersona(false);
@@ -511,13 +514,15 @@ export function Sidebar({ conversations, activeId, onSelect, onNew, onDelete, on
                         setPersonaDescription("");
                       }
                     }}
+                    disabled={isSavingPersona}
                     style={{
                       flex: 1, padding: '10px', borderRadius: 8, border: 'none',
                       backgroundColor: '#2563eb', color: '#fff',
-                      cursor: 'pointer', fontSize: 14, fontWeight: 600
+                      cursor: isSavingPersona ? 'not-allowed' : 'pointer', fontSize: 14, fontWeight: 600,
+                      opacity: isSavingPersona ? 0.7 : 1
                     }}
                   >
-                    Salvar Persona
+                    {isSavingPersona ? 'Salvando...' : 'Salvar Persona'}
                   </button>
                 </div>
               </>
