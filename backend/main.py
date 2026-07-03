@@ -105,7 +105,6 @@ async def get_provider_models(provider: str) -> dict:
         "gpt4o": ["gpt-4o", "gpt-4o-mini"],
         "gemini": ["gemini-3.5-flash"],
         "openrouter": [
-            "openrouter/owl-alpha",
             "openai/gpt-oss-120b:free",
             "nvidia/nemotron-3-super-120b-a12b:free",
             "poolside/laguna-m.1:free",
