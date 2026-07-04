@@ -11,6 +11,9 @@ os.environ["ACTIVE_MIDDLEWARE"] = "rate_limit,request_logger"
 from fastapi.testclient import TestClient
 from main import app
 from unittest.mock import patch, MagicMock
+from app.deps import get_current_user_id
+
+app.dependency_overrides[get_current_user_id] = lambda: "mock_user_id"
 
 client = TestClient(app)
 
@@ -202,6 +205,19 @@ def test_chat_stream_with_newline():
             assert response.status_code == 200
             content = response.read().decode("utf-8")
             assert '{"delta": "fim do paragrafo.\\n\\ninicio do proximo paragrafo"}' in content
+
+def test_chat_unauthenticated():
+    # Remover o override global apenas para este teste
+    app.dependency_overrides.pop(get_current_user_id, None)
+    
+    response = client.post(
+        "/api/chat", 
+        json={"messages": [{"role": "user", "content": "Olá"}]}
+    )
+    assert response.status_code == 401
+    
+    # Restaurar o override para os demais testes (caso a ordem de execução mude)
+    app.dependency_overrides[get_current_user_id] = lambda: "mock_user_id"
 
 def test_rate_limit():
     # Rate limit was set to 100 requests per minute.

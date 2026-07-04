@@ -1,11 +1,12 @@
 from typing import AsyncGenerator, Union
 import httpx
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import StreamingResponse
 from app.schemas.chat import ChatRequest, ChatResponse, ImageRequest
 from core.registry import get_provider
 from app.config import settings
 from core.protocol import LLMProvider
+from app.deps import get_current_user_id
 
 router = APIRouter()
 
@@ -46,7 +47,7 @@ def _inject_persona_guardrail(messages: list) -> list:
     return messages
 
 @router.post("/api/chat", response_model=ChatResponse)
-async def chat(request: ChatRequest) -> ChatResponse:
+async def chat(request: ChatRequest, user_id: str = Depends(get_current_user_id)) -> ChatResponse:
     provider = _get_active_provider(request)
     messages = _inject_persona_guardrail(request.messages)
     try:
@@ -58,7 +59,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
         raise _upstream_error(e)
 
 @router.post("/api/chat/stream")
-async def chat_stream(request: ChatRequest) -> StreamingResponse:
+async def chat_stream(request: ChatRequest, user_id: str = Depends(get_current_user_id)) -> StreamingResponse:
     provider = _get_active_provider(request)
     provider_name = request.provider or settings.LLM_PROVIDER
     messages = _inject_persona_guardrail(request.messages)
@@ -92,7 +93,7 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
     return StreamingResponse(sse_generator(), media_type="text/event-stream")
 
 @router.post("/api/generate/image", response_model=ChatResponse)
-async def generate_image(request: ImageRequest) -> ChatResponse:
+async def generate_image(request: ImageRequest, user_id: str = Depends(get_current_user_id)) -> ChatResponse:
     provider = _get_active_provider(request)
     try:
         content = await provider.generate_image(request.prompt)
@@ -104,7 +105,7 @@ async def generate_image(request: ImageRequest) -> ChatResponse:
         raise _upstream_error(e)
 
 @router.post("/api/generate/video")
-async def generate_video(request: ImageRequest) -> dict:
+async def generate_video(request: ImageRequest, user_id: str = Depends(get_current_user_id)) -> dict:
     provider = _get_active_provider(request)
     try:
         return await provider.generate_video(request.prompt)
@@ -114,7 +115,7 @@ async def generate_video(request: ImageRequest) -> dict:
         raise _upstream_error(e)
 
 @router.get("/api/generate/video/{job_id}")
-async def check_video(job_id: str) -> dict:
+async def check_video(job_id: str, user_id: str = Depends(get_current_user_id)) -> dict:
     parts = job_id.split("_", 1)
     if len(parts) == 2:
         provider_name = parts[0]
@@ -134,7 +135,7 @@ async def check_video(job_id: str) -> dict:
         raise _upstream_error(e)
 
 @router.post("/api/generate/audio")
-async def generate_audio(request: ImageRequest) -> dict:
+async def generate_audio(request: ImageRequest, user_id: str = Depends(get_current_user_id)) -> dict:
     provider = _get_active_provider(request)
     try:
         return await provider.generate_audio(request.prompt)
@@ -144,7 +145,7 @@ async def generate_audio(request: ImageRequest) -> dict:
         raise _upstream_error(e)
 
 @router.get("/api/generate/audio/{job_id}")
-async def check_audio(job_id: str) -> dict:
+async def check_audio(job_id: str, user_id: str = Depends(get_current_user_id)) -> dict:
     parts = job_id.split("_", 1)
     if len(parts) == 2:
         provider_name = parts[0]
