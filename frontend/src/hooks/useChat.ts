@@ -123,6 +123,7 @@ export function useChat() {
           if (!response.ok) {
             const err = new Error(`HTTP_ERROR_${response.status}`);
             (err as any).status = response.status;
+            try { (err as any).body = await response.json(); } catch(e) {}
             throw err;
           }
 
@@ -150,6 +151,7 @@ export function useChat() {
           if (!response.ok) {
             const err = new Error(`HTTP_ERROR_${response.status}`);
             (err as any).status = response.status;
+            try { (err as any).body = await response.json(); } catch(e) {}
             throw err;
           }
 
@@ -191,6 +193,7 @@ export function useChat() {
           if (!response.ok) {
             const err = new Error(`HTTP_ERROR_${response.status}`);
             (err as any).status = response.status;
+            try { (err as any).body = await response.json(); } catch(e) {}
             throw err;
           }
 
@@ -294,6 +297,7 @@ export function useChat() {
           if (!response.ok) {
             const err = new Error(`HTTP_ERROR_${response.status}`);
             (err as any).status = response.status;
+            try { (err as any).body = await response.json(); } catch(e) {}
             throw err;
           }
 
@@ -317,7 +321,11 @@ export function useChat() {
         if (error.status) {
            const status = error.status;
            if (status === 401 || status === 403) {
-             friendlyMsg = `Falha de autenticação no ${provider}. Verifique sua chave de API nas configurações.`;
+             if (error.body?.detail?.error_type === "session_expired") {
+               friendlyMsg = "Sua sessão expirou. Faça login novamente.";
+             } else {
+               friendlyMsg = `Falha de autenticação no ${provider}. Verifique sua chave de API nas configurações.`;
+             }
            } else if (status === 429) {
              friendlyMsg = `Limite de requisições excedido no ${provider} (Rate Limit). Tente novamente em alguns instantes.`;
            } else if (status >= 500) {
