@@ -100,6 +100,26 @@ class ClaudeProvider(LLMProvider):
                         except json.JSONDecodeError:
                             continue
 
+    async def health(self) -> bool:
+        if not self.api_key:
+            return False
+        payload = {
+            "model": self.model,
+            "messages": [{"role": "user", "content": "ping"}],
+            "max_tokens": 1
+        }
+        async with httpx.AsyncClient() as client:
+            try:
+                response = await client.post(
+                    self.base_url,
+                    headers=self.headers,
+                    json=payload,
+                    timeout=10.0
+                )
+                return response.status_code == 200
+            except httpx.RequestError:
+                return False
+
     async def stream_with_tools(self, messages: List[Message], tools: list, attachment: Optional[Attachment] = None) -> AsyncIterator[str]:
         from core.tools import get_tool
 
