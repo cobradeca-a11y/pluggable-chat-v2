@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { authFetch } from '../lib/authFetch';
 
 export function useVideoGeneration(jobId: string) {
   const [status, setStatus] = useState<string>('queued');
@@ -24,7 +25,7 @@ export function useVideoGeneration(jobId: string) {
 
       try {
         const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://pluggable-chat-v2-production.up.railway.app';
-        const res = await fetch(`${baseUrl}/api/generate/video/${jobId}`);
+        const res = await authFetch(`${baseUrl}/api/generate/video/${jobId}`);
         
         if (res.ok) {
           const data = await res.json();

@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { Message, ProviderSettings, ChatRequest, Attachment } from "../lib/types";
 import { useConversations } from "./useConversations";
 import { usePersonas } from "./usePersonas";
+import { authFetch } from "../lib/authFetch";
 
 export function useChat() {
   const conv = useConversations();
@@ -112,7 +113,7 @@ export function useChat() {
           if (providerSettings.provider) imagePayload.provider = providerSettings.provider;
           if (providerSettings.model) imagePayload.model = providerSettings.model;
 
-          const response = await fetch(`${backendUrl}/api/generate/image`, {
+          const response = await authFetch(`${backendUrl}/api/generate/image`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(imagePayload),
@@ -139,7 +140,7 @@ export function useChat() {
           if (providerSettings.provider) videoPayload.provider = providerSettings.provider;
           if (providerSettings.model) videoPayload.model = providerSettings.model;
 
-          const response = await fetch(`${backendUrl}/api/generate/video`, {
+          const response = await authFetch(`${backendUrl}/api/generate/video`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(videoPayload),
@@ -180,7 +181,7 @@ export function useChat() {
 
         if (stream) {
 
-          const response = await fetch(`${backendUrl}${endpoint}`, {
+          const response = await authFetch(`${backendUrl}${endpoint}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
@@ -284,7 +285,7 @@ export function useChat() {
             }
         } else {
           // Fallback synchronous approach
-          const response = await fetch(`${backendUrl}${endpoint}`, {
+          const response = await authFetch(`${backendUrl}${endpoint}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
