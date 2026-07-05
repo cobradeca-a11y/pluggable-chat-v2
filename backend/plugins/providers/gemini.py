@@ -148,3 +148,127 @@ class GeminiProvider(LLMProvider):
         
     async def check_video_status(self, job_id: str) -> dict:
         return {"status": "completed", "progress": 100, "url": "https://www.w3schools.com/html/mov_bbb.mp4"}
+
+    async def stream_with_tools(self, messages: List[Message], tools: list, attachment: Optional[Attachment] = None) -> AsyncIterator[str]:
+        from core.tools import get_tool
+
+        gemini_tools = []
+        for t in tools:
+            gemini_tools.append({
+                "type": "function",
+                "name": t.name,
+                "description": t.description,
+                "parameters": t.parameters
+            })
+
+        payload = {
+            "model": self.model,
+            "store": False,
+            "input": self._build_history(messages, attachment),
+            "stream": True
+        }
+        if gemini_tools:
+            payload["tools"] = gemini_tools
+
+        interaction_id = None
+        tool_call_id = None
+        tool_name = None
+        tool_arguments = ""
+        should_call_tool = False
+
+        async with httpx.AsyncClient() as client:
+            async with client.stream("POST", f"{self.base_url}?alt=sse", json=payload, headers=self.headers, timeout=self.timeout) as response:
+                response.raise_for_status()
+                async for line in response.aiter_lines():
+                    line = line.strip()
+                    if not line:
+                        continue
+                    if line.startswith("data: "):
+                        data_str = line[6:]
+                        if data_str.strip() == "[DONE]":
+                            break
+                        try:
+                            data = json.loads(data_str)
+                            event_type = data.get("event_type")
+                            
+                            if event_type == "interaction.created":
+                                interaction_id = data.get("interaction", {}).get("id")
+                            
+                            elif event_type == "step.start":
+                                step = data.get("step", {})
+                                if step.get("type") == "function_call":
+                                    tool_call_id = step.get("id") or step.get("call_id")
+                                    tool_name = step.get("name")
+                                    tool_arguments = ""
+                                    
+                            elif event_type == "step.delta":
+                                delta = data.get("delta", {})
+                                if delta.get("type") == "arguments_delta":
+                                    tool_arguments += delta.get("arguments", "")
+                                elif delta.get("type") == "text":
+                                    chunk = delta.get("text", "")
+                                    if chunk:
+                                        yield chunk
+                                        
+                            elif event_type == "step.stop":
+                                if tool_name:
+                                    should_call_tool = True
+                                    break
+                                    
+                        except Exception as e:
+                            logger.warning(f"Parse error: {e}")
+
+        if should_call_tool and tool_name and interaction_id:
+            try:
+                tool_args = json.loads(tool_arguments)
+            except Exception:
+                tool_args = {}
+            
+            tool_instance = get_tool(tool_name)
+            if tool_instance:
+                try:
+                    tool_result = await tool_instance().run(**tool_args)
+                except Exception as e:
+                    tool_result = str(e)
+            else:
+                tool_result = f"Ferramenta {tool_name} não encontrada."
+
+            subsequent_payload = {
+                "model": self.model,
+                "store": False,
+                "input": [
+                    {
+                        "type": "function_result",
+                        "name": tool_name,
+                        "call_id": tool_call_id,
+                        "result": [{"type": "text", "text": str(tool_result)}]
+                    }
+                ],
+                "previous_interaction_id": interaction_id,
+                "stream": True
+            }
+            if gemini_tools:
+                subsequent_payload["tools"] = gemini_tools
+                
+            async with httpx.AsyncClient() as client:
+                async with client.stream("POST", f"{self.base_url}?alt=sse", json=subsequent_payload, headers=self.headers, timeout=self.timeout) as response:
+                    response.raise_for_status()
+                    async for line in response.aiter_lines():
+                        line = line.strip()
+                        if not line:
+                            continue
+                        if line.startswith("data: "):
+                            data_str = line[6:]
+                            if data_str.strip() == "[DONE]":
+                                break
+                            try:
+                                data = json.loads(data_str)
+                                event_type = data.get("event_type")
+                                if event_type == "step.delta":
+                                    delta = data.get("delta", {})
+                                    if delta.get("type") == "text":
+                                        chunk = delta.get("text", "")
+                                        if chunk:
+                                            yield chunk
+                            except Exception:
+                                continue
