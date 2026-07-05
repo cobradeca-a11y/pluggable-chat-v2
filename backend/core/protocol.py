@@ -39,3 +39,6 @@ class LLMProvider(Protocol):
 
     async def check_audio_status(self, job_id: str) -> dict:
         raise NotImplementedError
+
+    async def stream_with_tools(self, messages: List[Message], tools: list, attachment: Optional[Attachment] = None) -> AsyncIterator[str]:
+        raise NotImplementedError

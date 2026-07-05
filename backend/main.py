@@ -64,6 +64,7 @@ async def list_plugins() -> dict:
                 "can_image": is_implemented("generate_image"),
                 "can_video": is_implemented("generate_video"),
                 "can_audio": is_implemented("generate_audio"),
+                "can_tools": is_implemented("stream_with_tools"),
                 "supported_attachments": supported
             })
         except Exception:
@@ -73,6 +74,7 @@ async def list_plugins() -> dict:
                 "can_image": False,
                 "can_video": False,
                 "can_audio": False,
+                "can_tools": False,
                 "supported_attachments": []
             })
             
