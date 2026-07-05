@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { ProviderSettings } from '../lib/types';
 import { useAvailableModels } from '../hooks/useAvailableModels';
 
+const DISABLED_PROVIDERS = ['claude', 'gpt4o'];
+
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -119,30 +121,30 @@ export function SettingsModal({ isOpen, onClose, settings, onSave }: SettingsMod
                   {providers.filter(p => p.can_text).length > 0 && (
                     <optgroup label="Provedores de Texto">
                       {providers.filter(p => p.can_text).map(p => (
-                        <option key={`text-${p.name}`} value={p.name}>{p.name}</option>
+                        <option key={`text-${p.name}`} value={p.name} disabled={DISABLED_PROVIDERS.includes(p.name)}>{p.name}</option>
                       ))}
                     </optgroup>
                   )}
                   {providers.filter(p => p.can_image).length > 0 && (
                     <optgroup label="Provedores de Imagem">
                       {providers.filter(p => p.can_image).map(p => (
-                        <option key={`img-${p.name}`} value={p.name}>{p.name}</option>
+                        <option key={`img-${p.name}`} value={p.name} disabled={DISABLED_PROVIDERS.includes(p.name)}>{p.name}</option>
                       ))}
                     </optgroup>
                   )}
                   {providers.filter(p => p.can_video).length > 0 && (
                     <optgroup label="Provedores de Vídeo">
                       {providers.filter(p => p.can_video).map(p => (
-                        <option key={`vid-${p.name}`} value={p.name}>{p.name}</option>
+                        <option key={`vid-${p.name}`} value={p.name} disabled={DISABLED_PROVIDERS.includes(p.name)}>{p.name}</option>
                       ))}
                     </optgroup>
                   )}
                 </>
               ) : (
                 <>
-                  <option value="mock">Mock (Testes)</option>
-                  <option value="openrouter">OpenRouter</option>
-                  <option value="ollama">Ollama (Local)</option>
+                  <option value="mock" disabled={DISABLED_PROVIDERS.includes('mock')}>Mock (Testes)</option>
+                  <option value="openrouter" disabled={DISABLED_PROVIDERS.includes('openrouter')}>OpenRouter</option>
+                  <option value="ollama" disabled={DISABLED_PROVIDERS.includes('ollama')}>Ollama (Local)</option>
                 </>
               )}
             </select>
