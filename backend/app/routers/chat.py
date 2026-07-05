@@ -58,6 +58,12 @@ async def chat(request: ChatRequest, user_id: str = Depends(get_current_user_id)
     except httpx.HTTPStatusError as e:
         raise _upstream_error(e)
 
+def _supports_tools(provider) -> bool:
+    provider_type = type(provider)
+    if not hasattr(provider_type, "stream_with_tools"):
+        return False
+    return provider_type.stream_with_tools is not getattr(LLMProvider, "stream_with_tools", None)
+
 @router.post("/api/chat/stream")
 async def chat_stream(request: ChatRequest, user_id: str = Depends(get_current_user_id)) -> StreamingResponse:
     provider = _get_active_provider(request)
@@ -67,8 +73,15 @@ async def chat_stream(request: ChatRequest, user_id: str = Depends(get_current_u
     async def sse_generator() -> AsyncGenerator[str, None]:
         try:
             import json
-            async for chunk in provider.stream(messages, attachment=request.attachment):
-                yield f"data: {json.dumps({'delta': chunk})}\n\n"
+            if _supports_tools(provider):
+                from core.tools import get_all_tools
+                tools_dict = get_all_tools()
+                tools = list(tools_dict.values())
+                async for chunk in provider.stream_with_tools(messages, tools=tools, attachment=request.attachment):
+                    yield f"data: {json.dumps({'delta': chunk})}\n\n"
+            else:
+                async for chunk in provider.stream(messages, attachment=request.attachment):
+                    yield f"data: {json.dumps({'delta': chunk})}\n\n"
         except NotImplementedError:
             import json
             err_payload = json.dumps({"provider": provider_name, "status": 501})
