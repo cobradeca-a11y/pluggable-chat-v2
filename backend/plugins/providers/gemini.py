@@ -163,7 +163,7 @@ class GeminiProvider(LLMProvider):
 
         payload = {
             "model": self.model,
-            "store": False,
+            "store": True,
             "input": self._build_history(messages, attachment),
             "stream": True
         }
@@ -240,7 +240,7 @@ class GeminiProvider(LLMProvider):
 
             subsequent_payload = {
                 "model": self.model,
-                "store": False,
+                "store": True,
                 "input": [
                     {
                         "type": "function_result",
