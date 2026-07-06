@@ -96,6 +96,10 @@ class GeminiProvider(LLMProvider):
                         data_str = line[6:]
                         try:
                             data = json.loads(data_str)
+                            if data.get("event_type") == "error":
+                                err = data.get("error", {})
+                                raise Exception(err.get("message", "Erro desconhecido do Gemini"))
+                            
                             if "delta" in data and data["delta"].get("type") == "text":
                                 chunk = data["delta"].get("text", "")
                                 if chunk:
@@ -194,7 +198,10 @@ class GeminiProvider(LLMProvider):
                             data = json.loads(data_str)
                             event_type = data.get("event_type")
                             
-                            if event_type == "interaction.created":
+                            if event_type == "error":
+                                err = data.get("error", {})
+                                raise Exception(err.get("message", "Erro desconhecido do Gemini"))
+                            elif event_type == "interaction.created":
                                 interaction_id = data.get("interaction", {}).get("id")
                             
                             elif event_type == "step.start":
@@ -272,7 +279,10 @@ class GeminiProvider(LLMProvider):
                             try:
                                 data = json.loads(data_str)
                                 event_type = data.get("event_type")
-                                if event_type == "step.delta":
+                                if event_type == "error":
+                                    err = data.get("error", {})
+                                    raise Exception(err.get("message", "Erro desconhecido do Gemini"))
+                                elif event_type == "step.delta":
                                     delta = data.get("delta", {})
                                     delta_type = delta.get("type")
                                     if delta_type in ("arguments_delta", "arguments"):
