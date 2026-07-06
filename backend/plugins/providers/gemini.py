@@ -170,6 +170,8 @@ class GeminiProvider(LLMProvider):
         if gemini_tools:
             payload["tools"] = gemini_tools
 
+        logger.info(f"[GEMINI REQUEST PAYLOAD] {json.dumps(payload)}")
+
         interaction_id = None
         tool_call_id = None
         tool_name = None
@@ -185,6 +187,7 @@ class GeminiProvider(LLMProvider):
                         continue
                     if line.startswith("data: "):
                         data_str = line[6:]
+                        logger.info(f"[GEMINI RAW SSE] {data_str}")
                         if data_str.strip() == "[DONE]":
                             break
                         try:
@@ -252,6 +255,8 @@ class GeminiProvider(LLMProvider):
             if gemini_tools:
                 subsequent_payload["tools"] = gemini_tools
                 
+            logger.info(f"[GEMINI REQUEST PAYLOAD SUBSEQUENT] {json.dumps(subsequent_payload)}")
+
             async with httpx.AsyncClient() as client:
                 async with client.stream("POST", f"{self.base_url}?alt=sse", json=subsequent_payload, headers=self.headers, timeout=self.timeout) as response:
                     response.raise_for_status()
@@ -261,6 +266,7 @@ class GeminiProvider(LLMProvider):
                             continue
                         if line.startswith("data: "):
                             data_str = line[6:]
+                            logger.info(f"[GEMINI RAW SSE] {data_str}")
                             if data_str.strip() == "[DONE]":
                                 break
                             try:
