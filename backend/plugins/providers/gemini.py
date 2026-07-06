@@ -203,9 +203,11 @@ class GeminiProvider(LLMProvider):
                                     
                             elif event_type == "step.delta":
                                 delta = data.get("delta", {})
-                                if delta.get("type") == "arguments_delta":
-                                    tool_arguments += delta.get("arguments", "")
-                                elif delta.get("type") == "text":
+                                delta_type = delta.get("type")
+                                if delta_type in ("arguments_delta", "arguments"):
+                                    fragment = delta.get("arguments") or delta.get("partial_arguments") or ""
+                                    tool_arguments += fragment
+                                elif delta_type == "text":
                                     chunk = delta.get("text", "")
                                     if chunk:
                                         yield chunk
@@ -266,7 +268,10 @@ class GeminiProvider(LLMProvider):
                                 event_type = data.get("event_type")
                                 if event_type == "step.delta":
                                     delta = data.get("delta", {})
-                                    if delta.get("type") == "text":
+                                    delta_type = delta.get("type")
+                                    if delta_type in ("arguments_delta", "arguments"):
+                                        pass # Ignora chamadas encadeadas de tools nesta versão
+                                    elif delta_type == "text":
                                         chunk = delta.get("text", "")
                                         if chunk:
                                             yield chunk
