@@ -79,12 +79,8 @@ async def list_plugins() -> dict:
             })
             
     _default_models = {
-        "claude": settings.CLAUDE_MODEL,
-        "gemini": settings.GOOGLE_MODEL,
-        "gpt4o": settings.OPENAI_MODEL,
-        "ollama": settings.OLLAMA_MODEL,
         "ollama-cloud": settings.OLLAMA_CLOUD_MODEL,
-        "mock": "mock",
+        "openrouter": settings.OPENROUTER_MODEL,
     }
     return {
         "providers": provider_list,
@@ -98,29 +94,19 @@ async def get_provider_models(provider: str) -> dict:
     Retorna modelos disponíveis para cada provider.
     
     Casos:
-    - ollama: REQUEST dinâmico a OllamaFreeAPI ou OLLAMA_BASE_URL
-    - claude, gpt4o, gemini, etc: Lista hardcoded
+    - ollama-cloud: REQUEST dinâmico a Ollama Cloud
+    - openrouter: Lista hardcoded
     """
     
     PROVIDER_MODELS = {
-        "claude": ["claude-3-5-sonnet-20241022", "claude-3-opus-20250219", "claude-3-haiku-20240307"],
-        "gpt4o": ["gpt-4o", "gpt-4o-mini"],
-        "gemini": ["gemini-3.5-flash"],
         "openrouter": [
             "openai/gpt-oss-120b:free",
             "nvidia/nemotron-3-super-120b-a12b:free",
             "poolside/laguna-m.1:free",
         ],
-        "mock": ["mock"],
     }
     
     PROVIDER_CATEGORIES = {
-        "gpt-4o": ["Texto Geral", "Código", "Visão"],
-        "gpt-4o-mini": ["Texto Geral", "Rápido"],
-        "claude-3-5-sonnet-20241022": ["Texto Geral", "Código", "Visão"],
-        "claude-3-opus-20250219": ["Texto Geral", "Raciocínio Complexo"],
-        "claude-3-haiku-20240307": ["Texto Geral", "Rápido"],
-        "gemini-3.5-flash": ["Texto Geral", "Rápido", "Visão"],
         "openai/gpt-oss-120b:free": ["Texto Geral"],
         "nvidia/nemotron-3-super-120b-a12b:free": ["Texto Geral"],
         "poolside/laguna-m.1:free": ["Código"],
@@ -142,7 +128,6 @@ async def get_provider_models(provider: str) -> dict:
         "minimax-m3": ["Texto Geral", "Raciocínio Complexo"],
         "gpt-oss:20b": ["Texto Geral"],
         "gpt-oss:120b": ["Texto Geral", "Raciocínio Complexo"],
-        "mock": ["Teste"]
     }
     
     # OLLAMA CLOUD - REQUEST DINÂMICO

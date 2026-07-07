@@ -8,13 +8,7 @@ class Settings(BaseSettings):
     OLLAMA_MODEL: str = "llama3.2"
     OLLAMA_CLOUD_MODEL: str = "gpt-oss:120b-cloud"
     OLLAMA_API_KEY: str = ""
-    CLAUDE_API_KEY: str = ""
-    CLAUDE_MODEL: str = "claude-3-5-sonnet-20241022"
-    OPENAI_API_KEY: str = ""
 
-    OPENAI_MODEL: str = "gpt-4o"
-    GOOGLE_API_KEY: str = ""
-    GOOGLE_MODEL: str = "gemini-3.5-flash"
     ALLOWED_ORIGIN: str = "http://localhost:3000"
     ACTIVE_MIDDLEWARE: str = "rate_limit,request_logger"
     RATE_LIMIT_RPM: int = 100

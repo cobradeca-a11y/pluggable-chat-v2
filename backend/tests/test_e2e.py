@@ -23,38 +23,8 @@ def test_plugins_endpoint():
     data = response.json()
     assert isinstance(data, dict)
     assert "providers" in data
-    assert any(p["name"] == "mock" for p in data["providers"])
-    assert any(p["name"] == "claude" for p in data["providers"])
-
-def test_claude_registered():
-    response = client.get("/api/plugins")
-    data = response.json()
-    claude_plugin = next((p for p in data["providers"] if p["name"] == "claude"), None)
-    assert claude_plugin is not None
-    assert claude_plugin["can_text"] is True
-    # Claude does not generate images, but it supports them as attachments.
-    assert claude_plugin["can_image"] is False
-    assert claude_plugin["can_video"] is False
-    assert "image/png" in claude_plugin["supported_attachments"]
-
-def test_gpt4o_registered():
-    response = client.get("/api/plugins")
-    data = response.json()
-    gpt4o_plugin = next((p for p in data["providers"] if p["name"] == "gpt4o"), None)
-    assert gpt4o_plugin is not None
-    assert gpt4o_plugin["can_text"] is True
-    assert gpt4o_plugin["can_image"] is False
-    assert gpt4o_plugin["can_video"] is False
-    assert "image/png" in gpt4o_plugin["supported_attachments"]
-
-def test_gemini_registered():
-    response = client.get("/api/plugins")
-    data = response.json()
-    p = next((p for p in data["providers"] if p["name"] == "gemini"), None)
-    assert p is not None
-    assert p["can_text"] is True
-    assert p["can_image"] is True
-    assert p["can_video"] is True
+    assert any(p["name"] == "openrouter" for p in data["providers"])
+    assert any(p["name"] == "ollama-cloud" for p in data["providers"])
 
 def test_openrouter_registered():
     response = client.get("/api/plugins")
@@ -70,13 +40,6 @@ def test_ollamacloud_registered():
     response = client.get("/api/plugins")
     data = response.json()
     p = next((p for p in data["providers"] if p["name"] == "ollama-cloud"), None)
-    assert p is not None
-    assert p["can_text"] is True
-
-def test_mock_registered():
-    response = client.get("/api/plugins")
-    data = response.json()
-    p = next((p for p in data["providers"] if p["name"] == "mock"), None)
     assert p is not None
     assert p["can_text"] is True
     
@@ -110,21 +73,47 @@ def test_check_audio_status():
 
 
 
-def test_chat_sync():
+@patch("app.routers.chat.get_provider")
+def test_chat_sync(mock_get_provider):
+    from core.protocol import LLMProvider
+    mock_provider_instance = MagicMock(spec=LLMProvider)
+    mock_provider_instance.model = "mock-model"
+    
+    async def fake_complete(*args, **kwargs):
+        return "I am a mock response."
+        
+    mock_provider_instance.complete = fake_complete
+    mock_get_provider.return_value = MagicMock(return_value=mock_provider_instance)
+
     response = client.post(
         "/api/chat", 
-        json={"messages": [{"role": "user", "content": "Olá"}], "provider": "mock"}
+        json={"messages": [{"role": "user", "content": "Olá"}], "provider": "ollama-cloud"}
     )
     assert response.status_code == 200
     data = response.json()
     assert "content" in data
     assert data["content"] == "I am a mock response."
 
-def test_chat_stream():
+@patch("app.routers.chat.get_provider")
+def test_chat_stream(mock_get_provider):
+    from core.protocol import LLMProvider
+    mock_provider_instance = MagicMock(spec=LLMProvider)
+    mock_provider_instance.model = "mock-model"
+    
+    async def fake_stream(*args, **kwargs):
+        yield " I"
+        yield " am"
+        yield " a"
+        yield " mock"
+        yield " response."
+        
+    mock_provider_instance.stream = fake_stream
+    mock_get_provider.return_value = MagicMock(return_value=mock_provider_instance)
+
     with client.stream(
         "POST",
         "/api/chat/stream",
-        json={"messages": [{"role": "user", "content": "Olá"}], "provider": "mock"}
+        json={"messages": [{"role": "user", "content": "Olá"}], "provider": "ollama-cloud"}
     ) as response:
         assert response.status_code == 200
         assert "text/event-stream" in response.headers["content-type"]
