@@ -10,6 +10,7 @@ import { SettingsModal } from '../components/SettingsModal';
 import { Sidebar } from '../components/Sidebar';
 import { useTheme } from '../hooks/useTheme';
 import { useActiveModel } from '../hooks/useActiveModel';
+import { useAvailableModels } from '../hooks/useAvailableModels';
 import { Attachment } from '../lib/types';
 import { useAuth } from '../hooks/useAuth';
 import { useRouter } from 'next/navigation';
@@ -36,6 +37,35 @@ export default function Home() {
   } = useChat();
 
   const { provider, model, supportedAttachments, canText, canImage, canVideo } = useActiveModel(providerSettings);
+
+  const [providers, setProviders] = useState<any[]>([]);
+  const { models: availableModels } = useAvailableModels(providerSettings.provider);
+
+  useEffect(() => {
+    const fetchProviders = async () => {
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://pluggable-chat-v2-production.up.railway.app';
+        const res = await fetch(`${baseUrl}/api/plugins`);
+        if (res.ok) {
+          const data = await res.json();
+          setProviders(data.providers || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch plugins", err);
+      }
+    };
+    fetchProviders();
+  }, []);
+
+  const handleProviderChange = (newProvider: string) => {
+    let defaultModel = providerSettings.model;
+    if (newProvider === 'openrouter' && !defaultModel.includes('openrouter')) {
+      defaultModel = 'openrouter/auto:free';
+    } else if (newProvider === 'ollama-cloud' && !defaultModel.includes('llama')) {
+      defaultModel = 'llama3.2';
+    }
+    saveProviderSettings({ ...providerSettings, provider: newProvider, model: defaultModel });
+  };
 
   const [pendingAttachment, setPendingAttachment] = useState<Attachment | null>(null);
 
@@ -309,12 +339,45 @@ export default function Home() {
               providerCapabilities={{ canText, canImage, canVideo }}
             />
             <div style={{ textAlign: 'center', marginTop: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <span style={{ fontSize: 10, color: '#52525b', textTransform: 'uppercase', letterSpacing: 1 }}>
-                AI Pluggable Architecture
-              </span>
-              <span style={{ fontSize: 11, color: '#71717a' }}>
-                {provider} · {model}
-              </span>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 8, fontSize: 12, opacity: 0.7 }}>
+                <select
+                  value={providerSettings.provider}
+                  onChange={(e) => handleProviderChange(e.target.value)}
+                  style={{ background: 'transparent', border: 'none', fontSize: 12, opacity: 0.85, cursor: 'pointer', outline: 'none' }}
+                >
+                  {providers.length > 0 ? (
+                    providers.map(p => (
+                      <option key={p.name} value={p.name} style={{ background: theme === 'dark' ? '#27272a' : '#fff' }}>
+                        {p.name}
+                      </option>
+                    ))
+                  ) : (
+                    <>
+                      <option value="openrouter" style={{ background: theme === 'dark' ? '#27272a' : '#fff' }}>openrouter</option>
+                      <option value="ollama-cloud" style={{ background: theme === 'dark' ? '#27272a' : '#fff' }}>ollama-cloud</option>
+                    </>
+                  )}
+                </select>
+                <span>·</span>
+                <select
+                  value={providerSettings.model}
+                  onChange={(e) => saveProviderSettings({ ...providerSettings, model: e.target.value })}
+                  style={{ background: 'transparent', border: 'none', fontSize: 12, opacity: 0.85, cursor: 'pointer', outline: 'none', maxWidth: 150, textOverflow: 'ellipsis' }}
+                >
+                  {availableModels.length > 0 ? (
+                    availableModels.map(m => (
+                      <option key={m} value={m} style={{ background: theme === 'dark' ? '#27272a' : '#fff' }}>
+                        {m}
+                      </option>
+                    ))
+                  ) : (
+                    <option value={providerSettings.model} style={{ background: theme === 'dark' ? '#27272a' : '#fff' }}>{providerSettings.model}</option>
+                  )}
+                </select>
+              </div>
+              <div style={{ textAlign: 'center', fontSize: 11, opacity: 0.5 }}>
+                AI PLUGGABLE ARCHITECTURE BY André d'Eça
+              </div>
             </div>
           </div>
         </div>
