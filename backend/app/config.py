@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     LLM_PROVIDER: str = "ollama-cloud"
     OPENROUTER_API_KEY: str = ""
-    OPENROUTER_MODEL: str = "openrouter/auto:free"
+    OPENROUTER_MODEL: str = "openai/gpt-oss-120b:free"
     OLLAMA_BASE_URL: str = "http://localhost:11434"
     OLLAMA_MODEL: str = "llama3.2"
     OLLAMA_CLOUD_MODEL: str = "gpt-oss:120b-cloud"

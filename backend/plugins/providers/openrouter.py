@@ -105,6 +105,138 @@ class OpenRouterProvider(LLMProvider):
             except httpx.RequestError:
                 return False
 
+    async def stream_with_tools(self, messages: List[Message], tools: list, attachment: Optional[Attachment] = None) -> AsyncIterator[str]:
+        from core.tools import get_tool
+
+        openrouter_tools = []
+        for t in tools:
+            openrouter_tools.append({
+                "type": "function",
+                "function": {
+                    "name": t.name,
+                    "description": t.description,
+                    "parameters": t.parameters
+                }
+            })
+
+        base_messages = self._build_messages(messages, attachment)
+
+        payload = {
+            "model": self.model,
+            "messages": base_messages,
+            "stream": True
+        }
+        if openrouter_tools:
+            payload["tools"] = openrouter_tools
+
+        tool_calls_dict = {}
+        finish_reason = None
+
+        async with httpx.AsyncClient() as client:
+            async with client.stream("POST", self.base_url, headers=self.headers, json=payload, timeout=90.0) as response:
+                response.raise_for_status()
+                async for line in response.aiter_lines():
+                    line = line.strip()
+                    if not line or not line.startswith("data: "):
+                        continue  # ignora comentários SSE de keep-alive, conforme doc oficial
+                    data_str = line[6:]
+                    if data_str.strip() == "[DONE]":
+                        break
+                    try:
+                        data = json.loads(data_str)
+                    except json.JSONDecodeError:
+                        continue
+
+                    if "choices" in data and len(data["choices"]) > 0:
+                        choice = data["choices"][0]
+                        delta = choice.get("delta", {})
+
+                        if "tool_calls" in delta:
+                            for tc in delta["tool_calls"]:
+                                idx = tc["index"]
+                                if idx not in tool_calls_dict:
+                                    tool_calls_dict[idx] = {
+                                        "id": tc.get("id"),
+                                        "name": tc.get("function", {}).get("name", ""),
+                                        "arguments": tc.get("function", {}).get("arguments", "")
+                                    }
+                                else:
+                                    tool_calls_dict[idx]["arguments"] += tc.get("function", {}).get("arguments", "")
+
+                        if "content" in delta and delta["content"]:
+                            yield delta["content"]
+
+                        if "finish_reason" in choice and choice["finish_reason"]:
+                            finish_reason = choice["finish_reason"]
+
+        if finish_reason != "tool_calls" or not tool_calls_dict:
+            return
+
+        # Só a primeira tool call é executada nesta versão (mesma
+        # limitação documentada em PENDENCIAS_TECNICAS.md pro Gemini).
+        first_tool = tool_calls_dict.get(0) or next(iter(tool_calls_dict.values()))
+        tool_name = first_tool["name"]
+        tool_call_id = first_tool["id"]
+        tool_input_json = first_tool["arguments"]
+
+        try:
+            tool_args = json.loads(tool_input_json)
+        except Exception:
+            tool_args = {}
+
+        tool_instance = get_tool(tool_name)
+        if tool_instance:
+            try:
+                tool_result = await tool_instance().run(**tool_args)
+            except Exception as e:
+                tool_result = str(e)
+        else:
+            tool_result = f"Ferramenta {tool_name} não encontrada."
+
+        payload_messages = base_messages + [
+            {
+                "role": "assistant",
+                "content": None,
+                "tool_calls": [
+                    {
+                        "id": tool_call_id,
+                        "type": "function",
+                        "function": {"name": tool_name, "arguments": tool_input_json}
+                    }
+                ]
+            },
+            {
+                "role": "tool",
+                "tool_call_id": tool_call_id,
+                "content": str(tool_result)
+            }
+        ]
+
+        subsequent_payload = {
+            "model": self.model,
+            "messages": payload_messages,
+            "stream": True
+        }
+
+        async with httpx.AsyncClient() as client:
+            async with client.stream("POST", self.base_url, headers=self.headers, json=subsequent_payload, timeout=90.0) as response:
+                response.raise_for_status()
+                async for line in response.aiter_lines():
+                    line = line.strip()
+                    if not line or not line.startswith("data: "):
+                        continue
+                    data_str = line[6:]
+                    if data_str.strip() == "[DONE]":
+                        break
+                    try:
+                        data = json.loads(data_str)
+                    except json.JSONDecodeError:
+                        continue
+                    if "choices" in data and len(data["choices"]) > 0:
+                        delta = data["choices"][0].get("delta", {})
+                        if "content" in delta and delta["content"]:
+                            yield delta["content"]
+
     async def generate_image(self, prompt: str) -> str:
         messages = [Message(role="user", content=prompt)]
         return await self.complete(messages)
