@@ -45,17 +45,29 @@ export function ChatInput({
     }
   }, [providerCapabilities]);
 
-  // Efeito de auto-detecção heurística
+  // Efeito de auto-detecção heurística.
+  // Anexo é uma ação discreta (o usuário clicou em anexar) — aplica na
+  // hora. Só a digitação de texto espera uma pausa (debounce), pra evitar
+  // a aba Texto/Imagem/Vídeo "piscando" a cada tecla.
   useEffect(() => {
-    if (providerCapabilities) {
+    if (!providerCapabilities) return;
+
+    const applyDetection = () => {
       const detected = detectMode(input, attachment);
-      // Se o usuário não clicou manualmente recentemente, aplicamos a heurística (caso o provider suporte)
       if (!userSelectedMode) {
         if (detected === 'image' && providerCapabilities.canImage) setMode('image');
         else if (detected === 'video' && providerCapabilities.canVideo) setMode('video');
         else if (detected === 'text' && providerCapabilities.canText) setMode('text');
       }
+    };
+
+    if (attachment) {
+      applyDetection();
+      return;
     }
+
+    const timeoutId = setTimeout(applyDetection, 400);
+    return () => clearTimeout(timeoutId);
   }, [input, attachment, providerCapabilities, userSelectedMode]);
 
   // Se o input esvaziar (mensagem enviada), resetamos a escolha manual para permitir auto-detecção novamente
