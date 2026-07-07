@@ -29,7 +29,8 @@ export function Sidebar({ conversations, activeId, onSelect, onNew, onDelete, on
   const [previewPersona, setPreviewPersona] = useState<{ suggested_name: string; system_prompt: string } | null>(null);
   const [personaNameOverride, setPersonaNameOverride] = useState('');
   const [isSavingPersona, setIsSavingPersona] = useState(false);
-  
+  const [isEditingPersona, setIsEditingPersona] = useState(false);
+  const [editingPersonaId, setEditingPersonaId] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
 
@@ -421,6 +422,22 @@ export function Sidebar({ conversations, activeId, onSelect, onNew, onDelete, on
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
+                          setIsEditingPersona(true);
+                          setEditingPersonaId(p.id);
+                          setPreviewPersona({ suggested_name: p.name, system_prompt: p.system_prompt });
+                          setPersonaNameOverride(p.name);
+                          setIsCreatingPersona(true);
+                        }}
+                        style={{
+                          background: 'transparent', border: 'none', color: '#2563eb',
+                          cursor: 'pointer', fontSize: 12, padding: 0
+                        }}
+                      >
+                        Editar
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
                           if (confirm('Deseja realmente excluir esta persona?')) {
                             personasHook.deletePersona(p.id);
                           }
@@ -444,7 +461,11 @@ export function Sidebar({ conversations, activeId, onSelect, onNew, onDelete, on
       {/* Modal de Nova Persona */}
       {isCreatingPersona && (
         <div
-          onClick={() => setIsCreatingPersona(false)}
+          onClick={() => {
+            setIsCreatingPersona(false);
+            setIsEditingPersona(false);
+            setEditingPersonaId(null);
+          }}
           style={{
             position: 'fixed', inset: 0,
             backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
@@ -462,7 +483,7 @@ export function Sidebar({ conversations, activeId, onSelect, onNew, onDelete, on
             }}
           >
             <h3 style={{ margin: '0 0 16px', fontSize: 18, fontWeight: 600, color: isDark ? '#f4f4f5' : '#18181b' }}>
-              Criar Nova Persona
+              {isEditingPersona ? 'Editar Persona' : 'Criar Nova Persona'}
             </h3>
 
             {!previewPersona ? (
@@ -534,26 +555,50 @@ export function Sidebar({ conversations, activeId, onSelect, onNew, onDelete, on
                 />
                 <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
                   <button
-                    onClick={() => setPreviewPersona(null)}
+                    onClick={() => {
+                      if (isEditingPersona) {
+                        setIsCreatingPersona(false);
+                        setIsEditingPersona(false);
+                        setEditingPersonaId(null);
+                      } else {
+                        setPreviewPersona(null);
+                      }
+                    }}
                     style={{
                       flex: 1, padding: '10px', borderRadius: 8, border: isDark ? '1px solid #3f3f46' : '1px solid #d4d4d8',
                       backgroundColor: 'transparent', color: isDark ? '#f4f4f5' : '#18181b',
                       cursor: 'pointer', fontSize: 14, fontWeight: 500
                     }}
                   >
-                    Voltar
+                    {isEditingPersona ? 'Cancelar' : 'Voltar'}
                   </button>
                   <button
                     onClick={async () => {
                       if (!personasHook || !previewPersona || isSavingPersona) return;
                       setIsSavingPersona(true);
-                      const p = await personasHook.savePersona(personaNameOverride || previewPersona.suggested_name, previewPersona.system_prompt);
-                      setIsSavingPersona(false);
-                      if (p) {
-                        personasHook.selectPersona(p.id);
+                      
+                      const finalName = personaNameOverride || previewPersona.suggested_name;
+                      
+                      if (isEditingPersona && editingPersonaId) {
+                        await personasHook.updatePersona(editingPersonaId, {
+                          name: finalName,
+                          system_prompt: previewPersona.system_prompt
+                        });
+                        setIsSavingPersona(false);
+                        setIsEditingPersona(false);
+                        setEditingPersonaId(null);
                         setIsCreatingPersona(false);
                         setPreviewPersona(null);
                         setPersonaDescription("");
+                      } else {
+                        const p = await personasHook.savePersona(finalName, previewPersona.system_prompt);
+                        setIsSavingPersona(false);
+                        if (p) {
+                          personasHook.selectPersona(p.id);
+                          setIsCreatingPersona(false);
+                          setPreviewPersona(null);
+                          setPersonaDescription("");
+                        }
                       }
                     }}
                     disabled={isSavingPersona}

@@ -87,7 +87,23 @@ export function usePersonas() {
     return null;
   };
 
+  const updatePersona = async (id: string, data: { name: string; system_prompt: string }) => {
+    try {
+      const res = await fetch(`${BASE_URL}/api/personas/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+        body: JSON.stringify(data),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setPersonas((prev) => prev.map((p) => (p.id === id ? updated : p)));
+      }
+    } catch (e) {
+      console.error("Failed to update persona", e);
+    }
+  };
+
   const activePersona = personas.find((p) => p.id === activePersonaId) || null;
 
-  return { personas, activePersona, activePersonaId, selectPersona, savePersona, deletePersona, generatePersona, loading };
+  return { personas, activePersona, activePersonaId, selectPersona, savePersona, updatePersona, deletePersona, generatePersona, loading };
 }

@@ -57,6 +57,24 @@ async def delete_persona(persona_id: str, user_id: str = Depends(get_current_use
     return {"status": "ok"}
 
 
+class PersonaUpdate(BaseModel):
+    name: str
+    system_prompt: str
+
+
+@router.put("/{persona_id}", response_model=PersonaOut)
+async def update_persona(persona_id: str, payload: PersonaUpdate, user_id: str = Depends(get_current_user_id)):
+    client = get_supabase_admin_client()
+    res = client.table("personas").update({
+        "name": payload.name,
+        "system_prompt": payload.system_prompt,
+    }).eq("id", persona_id).eq("user_id", user_id).execute()
+    
+    if not res.data:
+        raise HTTPException(status_code=404, detail="Persona não encontrada ou sem permissão para editar")
+    return res.data[0]
+
+
 @router.post("/generate", response_model=GenerateResponse)
 async def generate_persona(payload: GenerateRequest, user_id: str = Depends(get_current_user_id)):
     """
