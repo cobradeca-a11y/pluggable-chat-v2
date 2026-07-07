@@ -59,7 +59,7 @@ export function SettingsModal({ isOpen, onClose, settings, onSave }: SettingsMod
     // Auto-preencher modelo padrão para ajudar o usuário
     let defaultModel = localSettings.model;
     if (provider === 'openrouter' && !defaultModel.includes('openrouter')) {
-      defaultModel = 'openrouter/auto:free';
+      defaultModel = 'openai/gpt-oss-120b:free';
     } else if (provider === 'ollama' && !defaultModel.includes('llama')) {
       defaultModel = 'llama3.2';
     }

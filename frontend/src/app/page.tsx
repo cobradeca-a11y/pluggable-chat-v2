@@ -60,7 +60,7 @@ export default function Home() {
   const handleProviderChange = (newProvider: string) => {
     let defaultModel = providerSettings.model;
     if (newProvider === 'openrouter' && !defaultModel.includes('openrouter')) {
-      defaultModel = 'openrouter/auto:free';
+      defaultModel = 'openai/gpt-oss-120b:free';
     } else if (newProvider === 'ollama-cloud' && !defaultModel.includes('llama')) {
       defaultModel = 'llama3.2';
     }
