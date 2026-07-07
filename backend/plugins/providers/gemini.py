@@ -14,7 +14,7 @@ class GeminiProvider(LLMProvider):
         self.api_key = settings.GOOGLE_API_KEY
         self.model = settings.GOOGLE_MODEL
         self.base_url = "https://generativelanguage.googleapis.com/v1beta/interactions"
-        self.timeout = 60.0
+        self.timeout = 90.0
 
     @property
     def headers(self):
