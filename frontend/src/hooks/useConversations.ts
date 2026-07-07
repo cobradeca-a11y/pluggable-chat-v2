@@ -43,8 +43,8 @@ export function useConversations() {
               messages: d.messages,
               createdAt: new Date(d.created_at).getTime(),
               updatedAt: new Date(d.created_at).getTime(),
-              provider: d.messages[0]?.provider || 'mock',
-              model: d.messages[0]?.model || 'mock'
+              provider: d.messages[0]?.provider || 'ollama-cloud',
+              model: d.messages[0]?.model || 'llama3.2'
             }));
             
             dbConversations.sort((a: Conversation, b: Conversation) => b.updatedAt - a.updatedAt);

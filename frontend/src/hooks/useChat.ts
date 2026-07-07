@@ -14,8 +14,8 @@ export function useChat() {
   const abortControllerRef = useRef<AbortController | null>(null);
   const [toast, setToast] = useState<{message: string, type: 'success' | 'error'} | null>(null);
   const [providerSettings, setProviderSettings] = useState<ProviderSettings>({
-    provider: "gemini",
-    model: "gemini-3.5-flash",
+    provider: "ollama-cloud",
+    model: "llama3.2",
   });
 
   const isSwitchingRef = useRef(false);

@@ -113,7 +113,7 @@ def test_check_audio_status():
 def test_chat_sync():
     response = client.post(
         "/api/chat", 
-        json={"messages": [{"role": "user", "content": "Olá"}]}
+        json={"messages": [{"role": "user", "content": "Olá"}], "provider": "mock"}
     )
     assert response.status_code == 200
     data = response.json()
@@ -124,7 +124,7 @@ def test_chat_stream():
     with client.stream(
         "POST",
         "/api/chat/stream",
-        json={"messages": [{"role": "user", "content": "Olá"}]}
+        json={"messages": [{"role": "user", "content": "Olá"}], "provider": "mock"}
     ) as response:
         assert response.status_code == 200
         assert "text/event-stream" in response.headers["content-type"]

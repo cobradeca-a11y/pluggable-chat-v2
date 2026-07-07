@@ -30,7 +30,7 @@ export function useActiveModel(providerSettings: ProviderSettings) {
         if (res.ok) {
           const data = await res.json();
           if (isMounted) {
-            const activeProvider = providerSettings.provider || data.active_provider || 'mock';
+            const activeProvider = providerSettings.provider || data.active_provider || 'ollama-cloud';
             const activeModel = providerSettings.model || (data.default_models && data.default_models[activeProvider]) || '';
 
             const providersList = data.providers || [];
@@ -51,7 +51,7 @@ export function useActiveModel(providerSettings: ProviderSettings) {
         console.error("Erro ao buscar plugins para modelo ativo:", error);
         if (isMounted) {
           setActiveModelData({
-            provider: providerSettings.provider || 'mock',
+            provider: providerSettings.provider || 'ollama-cloud',
             model: providerSettings.model || '',
             supportedAttachments: [],
             canText: true,
