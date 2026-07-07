@@ -4,7 +4,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-os.environ["LLM_PROVIDER"] = "mock"
+os.environ["LLM_PROVIDER"] = "ollama-cloud"
 os.environ["RATE_LIMIT_RPM"] = "100"
 os.environ["ACTIVE_MIDDLEWARE"] = "rate_limit,request_logger"
 
@@ -163,13 +163,13 @@ def test_chat_stream_error():
         with client.stream(
             "POST",
             "/api/chat/stream",
-            json={"messages": [{"role": "user", "content": "Olá"}], "provider": "mock"}
+            json={"messages": [{"role": "user", "content": "Olá"}], "provider": "ollama-cloud"}
         ) as response:
             assert response.status_code == 200
             content = response.read().decode("utf-8")
             assert 'data: {"delta": "primeiro chunk"}' in content
             assert "data: [ERROR]" in content
-            assert '"provider": "mock"' in content
+            assert '"provider": "ollama-cloud"' in content
             assert "Erro simulado no meio do stream" in content
 
 def test_chat_stream_with_newline():
@@ -189,7 +189,7 @@ def test_chat_stream_with_newline():
         with client.stream(
             "POST",
             "/api/chat/stream",
-            json={"messages": [{"role": "user", "content": "Olá"}], "provider": "mock"}
+            json={"messages": [{"role": "user", "content": "Olá"}], "provider": "ollama-cloud"}
         ) as response:
             assert response.status_code == 200
             content = response.read().decode("utf-8")
