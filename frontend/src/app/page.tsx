@@ -59,10 +59,12 @@ export default function Home() {
 
   const handleProviderChange = (newProvider: string) => {
     let defaultModel = providerSettings.model;
-    if (newProvider === 'openrouter' && !defaultModel.includes('openrouter')) {
+    if (newProvider === 'openrouter' && !defaultModel.includes('openrouter') && !defaultModel.includes('/')) {
       defaultModel = 'openai/gpt-oss-120b:free';
     } else if (newProvider === 'ollama-cloud' && !defaultModel.includes('llama')) {
       defaultModel = 'llama3.2';
+    } else if (newProvider === 'groq' && !defaultModel.includes('versatile') && !defaultModel.includes('mixtral')) {
+      defaultModel = 'llama-3.3-70b-versatile';
     }
     saveProviderSettings({ ...providerSettings, provider: newProvider, model: defaultModel });
   };
@@ -376,7 +378,7 @@ export default function Home() {
                 </select>
               </div>
               <div style={{ textAlign: 'center', fontSize: 11, opacity: 0.5 }}>
-                AI PLUGGABLE ARCHITECTURE BY André d'Eça
+                AI Pluggable Architecture by André d'Eça
               </div>
             </div>
           </div>

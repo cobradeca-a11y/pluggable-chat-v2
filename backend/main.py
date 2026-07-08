@@ -81,6 +81,7 @@ async def list_plugins() -> dict:
     _default_models = {
         "ollama-cloud": settings.OLLAMA_CLOUD_MODEL,
         "openrouter": settings.OPENROUTER_MODEL,
+        "groq": settings.GROQ_MODEL,
     }
     return {
         "providers": provider_list,
@@ -104,12 +105,20 @@ async def get_provider_models(provider: str) -> dict:
             "nvidia/nemotron-3-super-120b-a12b:free",
             "poolside/laguna-m.1:free",
         ],
+        "groq": [
+            "llama-3.3-70b-versatile",
+            "llama-3.1-8b-instant",
+            "mixtral-8x7b-32768",
+        ],
     }
     
     PROVIDER_CATEGORIES = {
         "openai/gpt-oss-120b:free": ["Texto Geral"],
         "nvidia/nemotron-3-super-120b-a12b:free": ["Texto Geral"],
         "poolside/laguna-m.1:free": ["Código"],
+        "llama-3.3-70b-versatile": ["Texto Geral", "Tool Calling"],
+        "llama-3.1-8b-instant": ["Texto Geral", "Rápido"],
+        "mixtral-8x7b-32768": ["Texto Geral", "Código"],
         "llama3.2": ["Texto Geral", "Rápido"],
         "deepseek-r1:latest": ["Código", "Matemática", "Raciocínio Complexo"],
         "mistral:latest": ["Texto Geral"],
