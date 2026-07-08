@@ -95,8 +95,12 @@ async def get_provider_models(provider: str) -> dict:
     Retorna modelos disponíveis para cada provider.
     
     Casos:
-    - ollama-cloud: REQUEST dinâmico a Ollama Cloud
-    - openrouter: Lista hardcoded
+    - ollama-cloud: lista fixa e restrita (só modelos validados com busca
+      funcionando direito — ver PENDENCIAS_TECNICAS.md, vários modelos
+      testados deram data errada ou vazaram sintaxe de tool call quebrada)
+    - openrouter: lista hardcoded
+    - groq: lista hardcoda restrita à família gpt-oss, única com suporte
+      à ferramenta nativa "browser_search" (doc oficial do Groq)
     """
     
     PROVIDER_MODELS = {
@@ -106,9 +110,8 @@ async def get_provider_models(provider: str) -> dict:
             "poolside/laguna-m.1:free",
         ],
         "groq": [
-            "llama-3.3-70b-versatile",
-            "llama-3.1-8b-instant",
-            "mixtral-8x7b-32768",
+            "openai/gpt-oss-120b",
+            "openai/gpt-oss-20b",
         ],
     }
     
@@ -116,53 +119,21 @@ async def get_provider_models(provider: str) -> dict:
         "openai/gpt-oss-120b:free": ["Texto Geral"],
         "nvidia/nemotron-3-super-120b-a12b:free": ["Texto Geral"],
         "poolside/laguna-m.1:free": ["Código"],
-        "llama-3.3-70b-versatile": ["Texto Geral", "Tool Calling"],
-        "llama-3.1-8b-instant": ["Texto Geral", "Rápido"],
-        "mixtral-8x7b-32768": ["Texto Geral", "Código"],
+        "openai/gpt-oss-120b": ["Texto Geral", "Busca na Web"],
+        "openai/gpt-oss-20b": ["Texto Geral", "Busca na Web", "Rápido"],
         "llama3.2": ["Texto Geral", "Rápido"],
         "deepseek-r1:latest": ["Código", "Matemática", "Raciocínio Complexo"],
         "mistral:latest": ["Texto Geral"],
-        "qwen3-coder-next": ["Código"],
-        "qwen3-coder:480b": ["Código", "Raciocínio Complexo"],
-        "gemma3:27b": ["Texto Geral", "Código"],
-        "gemma3:12b": ["Texto Geral"],
-        "gemma3:4b": ["Texto Geral", "Rápido"],
-        "gemma4:31b": ["Texto Geral"],
-        "nemotron-3-super": ["Texto Geral"],
-        "nemotron-3-ultra": ["Texto Geral", "Raciocínio Complexo"],
-        "nemotron-3-nano:30b": ["Texto Geral", "Rápido"],
-        "glm-4.7": ["Texto Geral"],
-        "minimax-m2.5": ["Texto Geral"],
-        "minimax-m2.1": ["Texto Geral"],
-        "minimax-m3": ["Texto Geral", "Raciocínio Complexo"],
-        "gpt-oss:20b": ["Texto Geral"],
-        "gpt-oss:120b": ["Texto Geral", "Raciocínio Complexo"],
+        "gpt-oss:120b": ["Texto Geral", "Busca na Web"],
     }
     
-    # OLLAMA CLOUD - REQUEST DINÂMICO
-    OLLAMA_CLOUD_WHITELIST = [
-        "minimax-m2.5", "gemma3:27b", "nemotron-3-super", "glm-4.7",
-        "minimax-m2.1", "gpt-oss:20b", "gemma3:12b", "qwen3-coder-next",
-        "gemma3:4b", "gpt-oss:120b", "nemotron-3-ultra", "qwen3-coder:480b",
-        "nemotron-3-nano:30b", "minimax-m3", "gemma4:31b",
-    ]
+    # OLLAMA CLOUD - lista restrita e fixa.
+    # Só o gpt-oss:120b foi validado com busca na web funcionando direito
+    # em testes reais (06-07/07/2026). Outros modelos testados deram data
+    # errada (não chamaram a ferramenta de verdade) ou vazaram sintaxe de
+    # tool call quebrada na tela. Ver PENDENCIAS_TECNICAS.md.
+    OLLAMA_CLOUD_WHITELIST = ["gpt-oss:120b"]
     if provider == "ollama-cloud":
-        try:
-            async with httpx.AsyncClient() as client:
-                res = await client.get(
-                    "https://ollama.com/api/tags",
-                    headers={"Authorization": f"Bearer {settings.OLLAMA_API_KEY}"},
-                    timeout=5,
-                )
-                if res.status_code == 200:
-                    data = res.json()
-                    live_models = {m["name"] for m in data.get("models", [])}
-                    filtered = [m for m in OLLAMA_CLOUD_WHITELIST if m in live_models]
-                    if filtered:
-                        return {"models": filtered, "categories": PROVIDER_CATEGORIES}
-        except Exception:
-            pass
-        # Fallback: whitelist completa (sem checar disponibilidade ao vivo)
         return {"models": OLLAMA_CLOUD_WHITELIST, "categories": PROVIDER_CATEGORIES}
 
     # OLLAMA LOCAL - REQUEST DINÂMICO
